@@ -30,12 +30,13 @@ int main(int argc, char *argv[])
 
     char cmd[15], ip[20];
     int port;
-    int fd, newfd, counter, maxfd;
+    int fd, newfd = -1, counter, maxfd;
     fd_set rfds;
     char buffer[128];
 
     Node node;
     strcpy(node.ip, tcpIP);
+    node.FD = -1;
     node.port = tcpPort;
     node.intr = NULL;
     node.vzext.FD = -1;
@@ -60,10 +61,13 @@ int main(int argc, char *argv[])
 
     if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
         exit(1);
-
+    printf("ip inicail\n");
     if (listen(fd, 5) == -1)
         exit(1);
+
     maxfd = fd;
+    node.FD = fd;
+    freeaddrinfo(res);
     while (1)
     {
         FD_ZERO(&rfds);
@@ -87,6 +91,7 @@ int main(int argc, char *argv[])
 
         while (counter--)
         {
+
             if (FD_ISSET(0, &rfds))
             {
                 fgets(command, sizeof(command), stdin);
@@ -110,6 +115,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            // verifyExternal(&node);
             curr = node.intr;
             while (curr)
             {

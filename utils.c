@@ -29,32 +29,52 @@ void executeCommand(char *command, Node *node)
     char cmd[16], arg1[16];
     int arg2;
     sscanf(command, "%s %s %d", cmd, arg1, &arg2);
-    if (strcmp(cmd, "dj") == 0)
 
+    if (strcmp(cmd, "x") == 0)
     {
+        ExitNdn(node);
+    }
+
+    if (strcmp(cmd, "j") == 0)
+    {
+        JoinNet(node, arg1);
+        return;
+    }
+    if (strcmp(cmd, "dj") == 0)
+    {
+        printf("mandar directJoin\n");
         directJoin(node, arg1, arg2);
         return;
     }
-    else if (strcmp(cmd, "st") == 0)
+    if (strcmp(cmd, "st") == 0)
     {
-        if (node->vzext.port != -1)
-            printf("Vizinho externo: %s:%d\n", node->vzext.ip, node->vzext.port);
+
+        printf("Vizinho externo: %s:%d\n", node->vzext.ip, node->vzext.port);
         NodeList *curr = node->intr;
-        if (curr != NULL)
+
+        printf("Vizinhos internos:\n");
+        while (curr)
         {
-            printf("Vizinhos internos:\n");
-            while (curr)
-            {
-                printf("- %s:%d\n", curr->data.ip, curr->data.port);
-                curr = curr->next;
-            }
+            printf("- %s:%d\n", curr->data.ip, curr->data.port);
+            curr = curr->next;
         }
-        if (node->vzsalv.port != -1)
-            printf("Salvagurada: %s:%d\n", node->vzsalv.ip, node->vzsalv.port);
+
+        printf("Salvagurada: %s:%d\n", node->vzsalv.ip, node->vzsalv.port);
+        return;
     }
-    else
-    {
-        printf("Comando desconhecido: %s\n", cmd);
-    }
+
+    printf("Comando desconhecido: %s\n", cmd);
+
     return;
+}
+void ExitNdn(Node *node)
+{
+    NodeList *curr = node->intr;
+    while (curr)
+    {
+        close(curr->data.FD);
+        curr = curr->next;
+    }
+    close(node->FD);
+    exit(0);
 }

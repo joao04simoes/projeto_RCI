@@ -2,10 +2,10 @@
 #include "utils.h"
 #include "node.h"
 
-#define PORT "58000"
-#define SERVER "tejo.tecnico.ulisboa.pt"
+#define PORT "59000"
+#define SERVER "193.136.138.142"
 
-/*void JoinNet(Node *node, int Net)
+void JoinNet(Node *node, char *Net)
 {
     int fd, errcode;
     ssize_t n;
@@ -32,8 +32,9 @@
         printf("error server");
         exit(1);
     }
-
-    n = sendto(fd, "\n", 10, 0, res->ai_addr, res->ai_addrlen);
+    sprintf(buffer, "NODES %s\n", Net);
+    printf("%s", buffer);
+    n = sendto(fd, buffer, 10, 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)
     {
         perror("sendto");
@@ -49,14 +50,17 @@
         perror("recvfrom");
         exit(1);
     }
-
+    printf("JoinNet\n");
     write(1, "Echo: ", 6);
     write(1, buffer, n);
+    // if (sscanf(buffer, "NODESLIST %s\n%s %d\n",))
+
+    // directJoin(node,)
 
     freeaddrinfo(res);
     close(fd);
-    return 0;
-}*/
+    return;
+}
 
 void directJoin(Node *node, char *connectIP, int connectTCP)
 {
@@ -83,18 +87,18 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-
+    printf("directJoin\n");
     if ((errcode = getaddrinfo(connectIP, portStr, &hints, &res)) != 0)
         exit(1);
-
+    printf("directJoin\n");
     if (connect(JoinFD, res->ai_addr, res->ai_addrlen) == -1)
         exit(1);
-
+    printf("directJoin\n");
     char sendMsg[128], RecMsg[128];
 
     sprintf(sendMsg, "ENTRY %s %d\n", node->ip, node->port);
-    send(JoinFD, sendMsg, strlen(sendMsg), 0);
-    recv(JoinFD, RecMsg, sizeof(RecMsg), 0);
+    write(JoinFD, sendMsg, strlen(sendMsg));
+    read(JoinFD, RecMsg, sizeof(RecMsg));
 
     if (sscanf(RecMsg, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
     {
@@ -103,20 +107,15 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     }
     else
     {
-
-        if (sscanf(RecMsg, "%s %s %d\n %s %s %d\n", cmd, ip, &port, cmd2, ip2, &port2) == 6 && strcmp(cmd, "ENTRY") == 0)
+        printf("entry em vez de safe\n");
+        if (sscanf(RecMsg, "%s %s %d\n", cmd2, ip2, &port2) == 3 && strcmp(cmd2, "ENTRY") == 0)
         {
+            printf("nos dois\n");
             handleEntry(node, JoinFD, ip, port);
-            handleSafe(node, ip2, port2);
-        }
-        else
-        {
-            handleEntry(node, JoinFD, ip, port);
-            if (sscanf(RecMsg, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
-            {
-                handleSafe(node, ip, port);
-            }
+            printf("nos dois safe\n");
+            handleSafe(node, node->ip, node->port);
         }
     }
+    freeaddrinfo(res);
     return;
 }

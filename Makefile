@@ -1,9 +1,12 @@
 CC = gcc
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -g
 
-all: ndn
+
+
+all: clean ndn
 
 ndn: 
+	
 	$(CC) $(CFLAGS) -o ndn main.c node.c network.c utils.c
 	
 clean:
