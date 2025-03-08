@@ -43,5 +43,6 @@ void handleEntry(Node *node, int newfd, char *ip, int port);
 void handleSafe(Node *node, char *ip, int port);
 void addInfoToNode(Info *info, char *ip, int port, int fd);
 void verifyExternal(Node *node);
+void SendSafeMsg(Node *node, char *ip, int port, int FD);
 
 #endif // NODE_H

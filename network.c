@@ -8,6 +8,9 @@
 void JoinNet(Node *node, char *Net)
 {
     int fd, errcode;
+    char ipToJoin[20];
+    int portToJoin;
+    char trash[128];
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints, *res;
@@ -53,9 +56,11 @@ void JoinNet(Node *node, char *Net)
     printf("JoinNet\n");
     write(1, "Echo: ", 6);
     write(1, buffer, n);
-    // if (sscanf(buffer, "NODESLIST %s\n%s %d\n",))
-
-    // directJoin(node,)
+    if (sscanf(buffer, "NODESLIST %s\n%s %d\n", trash, ipToJoin, &portToJoin) == 3)
+    {
+        printf("JoinNet\n");
+        directJoin(node, ipToJoin, portToJoin);
+    }
 
     freeaddrinfo(res);
     close(fd);

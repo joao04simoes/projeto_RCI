@@ -115,16 +115,21 @@ int main(int argc, char *argv[])
                     }
                 }
             }
-            // verifyExternal(&node);
+
             curr = node.intr;
             while (curr)
             {
                 if (FD_ISSET(curr->data.FD, &rfds))
                 {
-                    recv(curr->data.FD, buffer, sizeof(buffer), MSG_DONTWAIT);
-                    if (newfd == -1)
+                    int er = read(curr->data.FD, buffer, sizeof(buffer));
+                    if (er == 0)
                     {
-                        perror("accept");
+                        verifyExternal(&node);
+                    }
+
+                    if (er == -1)
+                    {
+                        perror("read intr");
                     }
                     else
                     {
