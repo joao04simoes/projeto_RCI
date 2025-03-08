@@ -8,6 +8,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
+#define PORT "59000"
+#define SERVER "193.136.138.142"
 
 // Node Information
 typedef struct Info
@@ -33,6 +35,9 @@ typedef struct
     int port;
     char ip[20];
     int FD;
+    NodeList *netlist;
+    int NetReg;
+    char NET[4];
 } Node;
 
 // Function prototypes
@@ -43,6 +48,8 @@ void handleEntry(Node *node, int newfd, char *ip, int port);
 void handleSafe(Node *node, char *ip, int port);
 void addInfoToNode(Info *info, char *ip, int port, int fd);
 void verifyExternal(Node *node);
-void SendSafeMsg(Node *node, char *ip, int port, int FD);
+void SendSafeMsg(char *ip, int port, int FD);
+void SendEntryMsg(char *ip, int port, int FD);
+void AddNodeFromNetList(Node *node, char *ip, int port);
 
 #endif // NODE_H

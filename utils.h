@@ -10,5 +10,6 @@ int isInternal(Node *node, char *ip, int port);
 void errorExit(const char *msg);
 void executeCommand(char *command, Node *node);
 void ExitNdn(Node *node);
+void MakeNetList(char *buffer, Node *node);
 
 #endif // UTILS_H

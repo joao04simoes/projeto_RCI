@@ -11,18 +11,17 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    int cache = atoi(argv[1]);
+    // int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
-    char *regIP = argv[4];
-    int regUDP = atoi(argv[5]);
+    // char *regIP = argv[4];
+    // int regUDP = atoi(argv[5]);
 
     char portStr[6];
     sprintf(portStr, "%d", tcpPort);
 
     struct addrinfo hints, *res;
     int errcode;
-    ssize_t n;
     struct sockaddr addr;
     socklen_t addrlen = sizeof(addr);
     char command[128];
@@ -37,6 +36,7 @@ int main(int argc, char *argv[])
     Node node;
     strcpy(node.ip, tcpIP);
     node.FD = -1;
+    node.NetReg = -1;
     node.port = tcpPort;
     node.intr = NULL;
     node.vzext.FD = -1;
@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
     node.vzsalv.port = -1;
     node.vzext.port = -1;
     node.vzsalv.port = -1;
+    node.netlist = NULL;
 
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         exit(1);
@@ -140,6 +141,8 @@ int main(int argc, char *argv[])
                         }
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
                         {
+                            printf("safe ");
+                            printf("ip:%s port:%d\n", ip, port);
                             handleSafe(&node, ip, port);
                         }
                     }

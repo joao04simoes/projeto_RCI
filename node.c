@@ -1,6 +1,14 @@
 #include "node.h"
 #include "network.h"
 
+void AddNodeFromNetList(Node *node, char *ip, int port)
+{
+    NodeList *newNode = (NodeList *)malloc(sizeof(NodeList));
+    addInfoToNode(&newNode->data, ip, port, -1);
+    newNode->next = node->netlist;
+    node->netlist = newNode;
+}
+
 void addInternalNeighbor(Node *node, int fd, char *ip, int port)
 {
     NodeList *newNode = (NodeList *)malloc(sizeof(NodeList));
@@ -31,11 +39,9 @@ void removeInternalNeighbor(Node *node, int fd)
 void updateInternalsSafe(Node *node)
 {
     NodeList *curr = node->intr;
-    char msg[128];
-    sprintf(msg, "SAFE %s %d\n", node->vzext.ip, node->vzext.port);
     while (curr)
     {
-        write(curr->data.FD, msg, strlen(msg));
+        SendSafeMsg(node->vzext.ip, node->vzext.port, curr->data.FD);
         curr = curr->next;
     }
 }
@@ -46,17 +52,13 @@ void handleEntry(Node *node, int newfd, char *ip, int port)
     if (node->vzext.FD != -1)
     {
         printf("enviar logo safe aaprit do ahndle entry fD:%d\n", node->vzext.FD);
-        char msg[128];
-        sprintf(msg, "SAFE %s %d\n", node->vzext.ip, node->vzext.port);
-        write(newfd, msg, strlen(msg));
+        SendSafeMsg(node->vzext.ip, node->vzext.port, newfd);
     }
     else
     {
         printf("enviar logo sENTRY e safe aaprit do ahndle entry\n");
         addInfoToNode(&node->vzext, ip, port, newfd);
-        char msg[128];
-        sprintf(msg, "ENTRY %s %d\n", node->ip, node->port);
-        write(newfd, msg, strlen(msg));
+        SendEntryMsg(node->ip, node->port, newfd);
         updateInternalsSafe(node);
     }
 }
@@ -68,8 +70,6 @@ void handleSafe(Node *node, char *ip, int port)
 
 void verifyExternal(Node *node) // esta funçao não funciona
 {
-
-    char msg[128];
     NodeList *curr = node->intr;
     removeInternalNeighbor(node, node->vzext.FD);
     close(node->vzext.FD);
@@ -83,8 +83,7 @@ void verifyExternal(Node *node) // esta funçao não funciona
             {
                 printf("perdeu externo tem interno\n");
                 addInfoToNode(&node->vzext, curr->data.ip, curr->data.port, curr->data.FD);
-                sprintf(msg, "ENTRY %s %d\n", node->ip, node->port);
-                write(node->vzext.FD, msg, strlen(msg));
+                SendEntryMsg(node->ip, node->port, node->vzext.FD);
                 updateInternalsSafe(node);
                 return;
             }
@@ -116,11 +115,16 @@ void addInfoToNode(Info *info, char *ip, int port, int fd)
     info->port = port;
     strcpy(info->ip, ip);
 }
-// criar função de enviar entry e safe
 
-void SendSafeMsg(Node *node, char *ip, int port, int FD)
+void SendSafeMsg(char *ip, int port, int FD)
 {
     char msg[128];
     sprintf(msg, "SAFE %s %d\n", ip, port);
+    write(FD, msg, strlen(msg));
+}
+void SendEntryMsg(char *ip, int port, int FD)
+{
+    char msg[128];
+    sprintf(msg, "ENTRY %s %d\n", ip, port);
     write(FD, msg, strlen(msg));
 }

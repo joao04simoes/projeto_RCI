@@ -2,20 +2,16 @@
 #include "utils.h"
 #include "node.h"
 
-#define PORT "59000"
-#define SERVER "193.136.138.142"
-
 void JoinNet(Node *node, char *Net)
 {
     int fd, errcode;
-    char ipToJoin[20];
-    int portToJoin;
-    char trash[128];
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
-    char buffer[128];
+    char buffer[400];
+    char trash[128];
+    NodeList *curr;
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1)
@@ -31,17 +27,16 @@ void JoinNet(Node *node, char *Net)
     errcode = getaddrinfo(SERVER, PORT, &hints, &res);
     if (errcode != 0)
     {
-        perror("getaddrinfo");
-        printf("error server");
-        exit(1);
+        printf("erro no getaddrinfo server \n");
+        ExitNdn(node);
     }
     sprintf(buffer, "NODES %s\n", Net);
     printf("%s", buffer);
     n = sendto(fd, buffer, 10, 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)
     {
-        perror("sendto");
-        exit(1);
+        printf("erro no sendto server\n");
+        ExitNdn(node);
     }
 
     addrlen = sizeof(addr);
@@ -50,18 +45,44 @@ void JoinNet(Node *node, char *Net)
     n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
     if (n == -1)
     {
-        perror("recvfrom");
-        exit(1);
+        printf("erro no recvfrom\n");
+        ExitNdn(node);
     }
-    printf("JoinNet\n");
     write(1, "Echo: ", 6);
     write(1, buffer, n);
-    if (sscanf(buffer, "NODESLIST %s\n%s %d\n", trash, ipToJoin, &portToJoin) == 3)
+    MakeNetList(buffer, node);
+    // funçao para conetar a um no da lista
+    curr = node->netlist->next->next->next;
+    printf("List feita\n");
+    if (curr == NULL)
     {
-        printf("JoinNet\n");
-        directJoin(node, ipToJoin, portToJoin);
+        printf("Lista vazia\n");
+    }
+    directJoin(node, curr->data.ip, curr->data.port);
+    printf("Join feito\n");
+    sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);
+    n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
+    if (n == -1)
+    {
+        printf("erro no sendto server\n");
+        ExitNdn(node);
     }
 
+    n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+    printf("recebido do server %s fim \n", buffer);
+    if (n == -1)
+    {
+        printf("erro no recvfrom\n");
+        ExitNdn(node);
+    }
+    if (sscanf(buffer, "OKREG%s\n", trash) == 1)
+    {
+        printf("Registo feito com sucesso\n");
+    }
+    else
+    {
+        printf("Erro no registo\n");
+    }
     freeaddrinfo(res);
     close(fd);
     return;
@@ -69,11 +90,17 @@ void JoinNet(Node *node, char *Net)
 
 void directJoin(Node *node, char *connectIP, int connectTCP)
 {
+    printf("direct join\n");
     struct addrinfo hints, *res;
     int errcode, JoinFD, port, port2;
     char cmd[15], ip[20];
     char portStr[6];
     char cmd2[15], ip2[20];
+
+    if (strcmp(connectIP, "0.0.0.0") == 0)
+    {
+        // cria uma red so com ele
+    }
 
     if (isInternal(node, connectIP, connectTCP) == 1)
     {
@@ -83,27 +110,37 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
 
     sprintf(portStr, "%d", connectTCP);
     if ((JoinFD = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        exit(1);
-
-    node->vzext.port = connectTCP;
-    strcpy(node->vzext.ip, connectIP);
-    node->vzext.FD = JoinFD;
+    {
+        printf("erro no socket\n");
+        ExitNdn(node);
+    }
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    printf("directJoin\n");
-    if ((errcode = getaddrinfo(connectIP, portStr, &hints, &res)) != 0)
-        exit(1);
-    printf("directJoin\n");
-    if (connect(JoinFD, res->ai_addr, res->ai_addrlen) == -1)
-        exit(1);
-    printf("directJoin\n");
-    char sendMsg[128], RecMsg[128];
 
-    sprintf(sendMsg, "ENTRY %s %d\n", node->ip, node->port);
-    write(JoinFD, sendMsg, strlen(sendMsg));
+    if ((errcode = getaddrinfo(connectIP, portStr, &hints, &res)) != 0)
+    {
+        printf("erro no getaddrinfo\n");
+        ExitNdn(node);
+    }
+    printf("conectando %s : %d\n", connectIP, connectTCP);
+    if (connect(JoinFD, res->ai_addr, res->ai_addrlen) == -1)
+    {
+        printf("erro no connect\n");
+        ExitNdn(node);
+    }
+    printf("conectado\n");
+    node->vzext.port = connectTCP;
+    strcpy(node->vzext.ip, connectIP);
+    node->vzext.FD = JoinFD;
+
+    char RecMsg[128];
+
+    SendEntryMsg(node->ip, node->port, JoinFD);
+    printf("mandou entry\n");
     read(JoinFD, RecMsg, sizeof(RecMsg));
+    printf("leu\n");
 
     if (sscanf(RecMsg, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
     {
@@ -112,12 +149,9 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     }
     else
     {
-        printf("entry em vez de safe\n");
         if (sscanf(RecMsg, "%s %s %d\n", cmd2, ip2, &port2) == 3 && strcmp(cmd2, "ENTRY") == 0)
         {
-            printf("nos dois\n");
             handleEntry(node, JoinFD, ip, port);
-            printf("nos dois safe\n");
             handleSafe(node, node->ip, node->port);
         }
     }
