@@ -123,9 +123,16 @@ int main(int argc, char *argv[])
                 if (FD_ISSET(curr->data.FD, &rfds))
                 {
                     int er = read(curr->data.FD, buffer, sizeof(buffer));
-                    if (er == 0)
+                    if (er == 0 && strcmp(curr->data.ip, node.vzext.ip) == 0)
                     {
                         verifyExternal(&node);
+                    }
+                    else
+                    {
+                        if (er == 0)
+                        {
+                            removeInternalNeighbor(&node, curr->data.FD);
+                        }
                     }
 
                     if (er == -1)
