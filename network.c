@@ -48,18 +48,16 @@ void JoinNet(Node *node, char *Net)
         printf("erro no recvfrom\n");
         ExitNdn(node);
     }
-    write(1, "Echo: ", 6);
-    write(1, buffer, n);
+    // write(1, "Echo: ", 6);
+    // write(1, buffer, n);
     MakeNetList(buffer, node);
     // funçao para conetar a um no da lista
-    curr = node->netlist->next->next->next;
-    printf("List feita\n");
+    curr = node->netlist;
     if (curr == NULL)
     {
         printf("Lista vazia\n");
     }
     directJoin(node, curr->data.ip, curr->data.port);
-    printf("Join feito\n");
     sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);
     n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)
@@ -67,9 +65,9 @@ void JoinNet(Node *node, char *Net)
         printf("erro no sendto server\n");
         ExitNdn(node);
     }
-
+    buffer[0] = 0;
     n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
-    printf("recebido do server %s fim \n", buffer);
+    // printf("recebido do server %s fim \n", buffer);
     if (n == -1)
     {
         printf("erro no recvfrom\n");
@@ -78,6 +76,7 @@ void JoinNet(Node *node, char *Net)
     if (sscanf(buffer, "OKREG%s\n", trash) == 1)
     {
         printf("Registo feito com sucesso\n");
+        node->NetReg = 1;
     }
     else
     {

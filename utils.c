@@ -70,7 +70,7 @@ void executeCommand(char *command, Node *node)
 }
 void ExitNdn(Node *node)
 {
-    char buffer[128];
+    char buffer[128], trash[128];
     int n;
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
@@ -100,6 +100,9 @@ void ExitNdn(Node *node)
             perror("socket");
             exit(1);
         }
+        memset(&hints, 0, sizeof hints);
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_DGRAM;
         errcode = getaddrinfo(SERVER, PORT, &hints, &res);
         if (errcode != 0)
         {
@@ -107,19 +110,21 @@ void ExitNdn(Node *node)
             exit(1);
         }
         sprintf(buffer, "UNREG %s %s %d\n", node->NET, node->ip, node->port);
-        n = sendto(fd, buffer, 10, 0, res->ai_addr, res->ai_addrlen);
+        n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
         if (n == -1)
         {
             printf("erro no sendto server\n");
             exit(1);
         }
-
+        buffer[0] = 0;
         n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
         if (n == -1)
         {
             printf("erro no recvfrom\n");
         }
-        if (sscanf(buffer, "OKUNREG") == 1)
+
+        printf("recebido do server %s fim \n", buffer);
+        if (sscanf(buffer, "OKUNREG%s", trash) == 1)
         {
             printf("Remoção do registo feita com sucesso\n");
         }
