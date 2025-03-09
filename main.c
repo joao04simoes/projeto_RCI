@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
 
     if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
         exit(1);
-    printf("ip inicail\n");
     if (listen(fd, 5) == -1)
         exit(1);
 
@@ -112,6 +111,7 @@ int main(int argc, char *argv[])
                         maxfd = newfd;
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                     {
+                        printf("recebeu direct join %s : %d \n", ip, port);
                         handleEntry(&node, newfd, ip, port);
                     }
                 }
@@ -122,15 +122,18 @@ int main(int argc, char *argv[])
             {
                 if (FD_ISSET(curr->data.FD, &rfds))
                 {
+                    buffer[0] = 0;
                     int er = read(curr->data.FD, buffer, sizeof(buffer));
-                    if (er == 0 && strcmp(curr->data.ip, node.vzext.ip) == 0)
+                    if (er == 0 && strcmp(curr->data.ip, node.vzext.ip) == 0 && curr->data.port == node.vzext.port)
                     {
+                        printf("o no externo foi desligado\n");
                         verifyExternal(&node);
                     }
                     else
                     {
                         if (er == 0)
                         {
+                            printf("o no interno foi desligado\n");
                             removeInternalNeighbor(&node, curr->data.FD);
                         }
                     }
@@ -141,15 +144,16 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
+
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                         {
-                            printf("os nos ja se encontram ligados\n");
-                            // handleEntry(&node, newfd, ip, port); acho que não faz sentido isto se fazer aqui
+                            printf("recebeu entry seguido de safe %s : %d \n", ip, port);
+                            handleEntry(&node, curr->data.FD, ip, port);
+                            handleSafe(&node, node.ip, node.port);
                         }
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
                         {
-                            printf("safe ");
-                            printf("ip:%s port:%d\n", ip, port);
+                            printf("recebeu safe %s : %d \n", ip, port);
                             handleSafe(&node, ip, port);
                         }
                     }

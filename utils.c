@@ -43,7 +43,7 @@ void executeCommand(char *command, Node *node)
     }
     if (strcmp(cmd, "dj") == 0)
     {
-        printf("mandar directJoin\n");
+
         directJoin(node, arg1, arg2);
         return;
     }

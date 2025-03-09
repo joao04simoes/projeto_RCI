@@ -90,7 +90,6 @@ void JoinNet(Node *node, char *Net)
 
 void directJoin(Node *node, char *connectIP, int connectTCP)
 {
-    printf("direct join\n");
     struct addrinfo hints, *res;
     int errcode, JoinFD, port, port2;
     char cmd[15], ip[20];
@@ -99,7 +98,9 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
 
     if (strcmp(connectIP, "0.0.0.0") == 0)
     {
-        // cria uma red so com ele
+        printf("ip 0.0.0.0");
+        addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
+        return;
     }
 
     if (isInternal(node, connectIP, connectTCP) == 1)
@@ -130,7 +131,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
         printf("erro no connect\n");
         ExitNdn(node);
     }
-    printf("conectado\n");
+
     node->vzext.port = connectTCP;
     strcpy(node->vzext.ip, connectIP);
     node->vzext.FD = JoinFD;
@@ -138,12 +139,10 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     char RecMsg[128];
 
     SendEntryMsg(node->ip, node->port, JoinFD);
-    printf("mandou entry\n");
     read(JoinFD, RecMsg, sizeof(RecMsg));
-    printf("leu\n");
-
     if (sscanf(RecMsg, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
     {
+        printf("recebeu safe %s : %d \n", ip, port);
         handleSafe(node, ip, port);
         addInternalNeighbor(node, JoinFD, node->vzext.ip, node->vzext.port);
     }
@@ -151,6 +150,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     {
         if (sscanf(RecMsg, "%s %s %d\n", cmd2, ip2, &port2) == 3 && strcmp(cmd2, "ENTRY") == 0)
         {
+            printf("recebeu entry seguido de safe %s : %d \n", ip2, port2);
             handleEntry(node, JoinFD, ip, port);
             handleSafe(node, node->ip, node->port);
         }

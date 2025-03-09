@@ -1,5 +1,6 @@
 #include "node.h"
 #include "network.h"
+#include "utils.h"
 
 void AddNodeFromNetList(Node *node, char *ip, int port)
 {
@@ -48,15 +49,16 @@ void updateInternalsSafe(Node *node)
 
 void handleEntry(Node *node, int newfd, char *ip, int port)
 {
-    addInternalNeighbor(node, newfd, ip, port);
+    if (isInternal(node, ip, port) == 0)
+        addInternalNeighbor(node, newfd, ip, port);
     if (node->vzext.FD != -1)
     {
-        printf("enviar logo safe aaprit do ahndle entry fD:%d\n", node->vzext.FD);
+        printf("enviar mensagemde safe %s:%d\n", node->vzext.ip, node->vzext.port);
         SendSafeMsg(node->vzext.ip, node->vzext.port, newfd);
     }
     else
     {
-        printf("enviar logo sENTRY e safe aaprit do ahndle entry\n");
+        printf("enviar mensagem de entry e safe %s:%d\n", node->ip, node->port);
         addInfoToNode(&node->vzext, ip, port, newfd);
         SendEntryMsg(node->ip, node->port, newfd);
         updateInternalsSafe(node);
@@ -91,20 +93,19 @@ void verifyExternal(Node *node) // esta funçao não funciona
         // não tem internos nem salvaguarda
         printf("perdeu externo não tem interno nem salvaguarda\n");
         addInfoToNode(&node->vzext, "", -1, -1);
-        printf("escreve nada n o externos\n");
         return;
     }
     else
     {
-        printf("perdeu externo tem salvaguarda\n");
+        if (strcmp(node->vzsalv.ip, node->ip) == 0 && node->vzsalv.port == node->port)
+        {
+            printf("a salva é ele mesmo\n");
+            return;
+        }
         addInfoToNode(&node->vzext, node->vzsalv.ip, node->vzsalv.port, node->vzsalv.FD);
-        printf("escreve o salva no externos\n");
         addInfoToNode(&node->vzsalv, "", -1, -1);
-        printf("escreve nada n o salva\n");
         directJoin(node, node->vzext.ip, node->vzext.port);
-        printf("mandou entry mesage\n");
         updateInternalsSafe(node);
-        printf("update dso internal\n");
         return;
     }
 }
