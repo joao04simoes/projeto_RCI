@@ -47,6 +47,11 @@ void executeCommand(char *command, Node *node)
         directJoin(node, arg1, arg2);
         return;
     }
+    if (strcmp(cmd, "l") == 0)
+    {
+        leaveNet(node);
+        return;
+    }
     if (strcmp(cmd, "st") == 0)
     {
 
@@ -70,6 +75,38 @@ void executeCommand(char *command, Node *node)
 }
 void ExitNdn(Node *node)
 {
+
+    leaveNet(node);
+
+    close(node->FD);
+    exit(0);
+}
+
+void MakeNetList(char *buffer, Node *node)
+{
+    char ipToJoin[20];
+    int portToJoin;
+    char *line = strtok(buffer, "\n"); // Divide o buffer por linhas
+    if (line && strncmp(line, "NODESLIST", 9) == 0)
+    {
+        line = strtok(NULL, "\n"); // Pula a primeira linha (NODESLIST net)
+    }
+
+    while (line)
+    {
+        if (sscanf(line, "%s %d\n", ipToJoin, &portToJoin) == 2)
+        {
+            printf("Adicionando nó %s:%d à lista\n", ipToJoin, portToJoin);
+            AddNodeFromNetList(node, ipToJoin, portToJoin);
+            printf("%s:%d adicionado\n", node->netlist->data.ip, node->netlist->data.port);
+        }
+        line = strtok(NULL, "\n"); // Próxima linha
+    }
+}
+
+void leaveNet(Node *node)
+{
+
     char buffer[128], trash[128];
     int n;
     struct addrinfo hints, *res;
@@ -83,10 +120,9 @@ void ExitNdn(Node *node)
         close(curr->data.FD);
         curr = curr->next;
     }
-    close(node->FD);
     if (node->NetReg == 1)
     {
-
+        node->NetReg = -1;
         curr = node->netlist;
         while (curr)
         {
@@ -132,29 +168,5 @@ void ExitNdn(Node *node)
         {
             printf("Erro na remoção\n");
         }
-    }
-
-    exit(0);
-}
-
-void MakeNetList(char *buffer, Node *node)
-{
-    char ipToJoin[20];
-    int portToJoin;
-    char *line = strtok(buffer, "\n"); // Divide o buffer por linhas
-    if (line && strncmp(line, "NODESLIST", 9) == 0)
-    {
-        line = strtok(NULL, "\n"); // Pula a primeira linha (NODESLIST net)
-    }
-
-    while (line)
-    {
-        if (sscanf(line, "%s %d\n", ipToJoin, &portToJoin) == 2)
-        {
-            printf("Adicionando nó %s:%d à lista\n", ipToJoin, portToJoin);
-            AddNodeFromNetList(node, ipToJoin, portToJoin);
-            printf("%s:%d adicionado\n", node->netlist->data.ip, node->netlist->data.port);
-        }
-        line = strtok(NULL, "\n"); // Próxima linha
     }
 }
