@@ -8,8 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdio.h>
-#define PORT "59000"
-#define SERVER "193.136.138.142"
 
 // Node Information
 typedef struct Info
@@ -38,6 +36,8 @@ typedef struct
     NodeList *netlist;
     int NetReg;
     char NET[4];
+    char regIP[20];
+    char regUDP[6];
 } Node;
 
 // Function prototypes

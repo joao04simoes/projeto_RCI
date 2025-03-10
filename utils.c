@@ -103,7 +103,7 @@ void ExitNdn(Node *node)
         memset(&hints, 0, sizeof hints);
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
-        errcode = getaddrinfo(SERVER, PORT, &hints, &res);
+        errcode = getaddrinfo(node->regIP, node->regUDP, &hints, &res);
         if (errcode != 0)
         {
             printf("erro no getaddrinfo server \n");

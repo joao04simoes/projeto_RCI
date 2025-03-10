@@ -2,20 +2,28 @@
 #include "network.h"
 #include "utils.h"
 
+char *regIP;
+char *regUDP;
+
 int main(int argc, char *argv[])
 {
-
-    if (argc != 6)
+    Node node;
+    if (argc < 4)
     {
         fprintf(stderr, "Uso correto: %s cache IP TCP regIP regUDP\n", argv[0]);
         exit(1);
     }
+    else
+    {
+        regIP = argv[4];
+        regUDP = argv[5];
+    }
 
+    strcat(node.regIP, "193.136.138.142");
+    strcat(node.regUDP, "59000");
     // int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
-    // char *regIP = argv[4];
-    // int regUDP = atoi(argv[5]);
 
     char portStr[6];
     sprintf(portStr, "%d", tcpPort);
@@ -33,7 +41,6 @@ int main(int argc, char *argv[])
     fd_set rfds;
     char buffer[128];
 
-    Node node;
     strcpy(node.ip, tcpIP);
     node.FD = -1;
     node.NetReg = -1;
@@ -134,11 +141,13 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
+                    printf("recebeu %s\n", buffer);
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                     {
-                        printf("recebeu entry seguido de safe %s : %d \n", ip, port);
+                        printf("recebeu entry %s : %d \n", ip, port);
                         handleEntry(&node, node.vzext.FD, ip, port);
                     }
+
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
                     {
                         printf("recebeu safe %s : %d \n", ip, port);
@@ -155,17 +164,10 @@ int main(int argc, char *argv[])
                     buffer[0] = 0;
                     int er = read(curr->data.FD, buffer, sizeof(buffer));
                     if (er == 0 && strcmp(curr->data.ip, node.vzext.ip) == 0 && curr->data.port == node.vzext.port)
+
                     {
-                        printf("o no externo foi desligado\n");
-                        // verifyExternal(&node);
-                    }
-                    else
-                    {
-                        if (er == 0)
-                        {
-                            printf("o no interno foi desligado\n");
-                            removeInternalNeighbor(&node, curr->data.FD);
-                        }
+                        printf("o no interno foi desligado\n");
+                        removeInternalNeighbor(&node, curr->data.FD);
                     }
 
                     if (er == -1)
@@ -177,9 +179,10 @@ int main(int argc, char *argv[])
 
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                         {
-                            printf("recebeu entry seguido de safe %s : %d \n", ip, port);
+                            printf("recebeu entry %s : %d \n", ip, port);
                             handleEntry(&node, curr->data.FD, ip, port);
                         }
+
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
                         {
                             printf("recebeu safe %s : %d \n", ip, port);

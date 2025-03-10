@@ -24,7 +24,7 @@ void JoinNet(Node *node, char *Net)
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    errcode = getaddrinfo(SERVER, PORT, &hints, &res);
+    errcode = getaddrinfo(node->regIP, node->regUDP, &hints, &res);
     if (errcode != 0)
     {
         printf("erro no getaddrinfo server \n");
@@ -53,11 +53,11 @@ void JoinNet(Node *node, char *Net)
     MakeNetList(buffer, node);
     // funçao para conetar a um no da lista
     curr = node->netlist;
-    if (curr == NULL)
+    if (curr != NULL)
     {
-        printf("Lista vazia\n");
+        directJoin(node, curr->data.ip, curr->data.port);
     }
-    directJoin(node, curr->data.ip, curr->data.port);
+
     sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);
     n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)

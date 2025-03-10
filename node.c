@@ -42,7 +42,8 @@ void updateInternalsSafe(Node *node)
     NodeList *curr = node->intr;
     while (curr)
     {
-        SendSafeMsg(node->vzext.ip, node->vzext.port, curr->data.FD);
+        if (curr->data.FD != node->vzext.FD)
+            SendSafeMsg(node->vzext.ip, node->vzext.port, curr->data.FD);
         curr = curr->next;
     }
 }
@@ -62,6 +63,7 @@ void handleEntry(Node *node, int newfd, char *ip, int port)
         addInfoToNode(&node->vzext, ip, port, newfd);
         SendEntryMsg(node->ip, node->port, newfd);
         sleep(1);
+        SendSafeMsg(node->vzext.ip, node->vzext.port, newfd);
         updateInternalsSafe(node);
     }
 }
@@ -87,6 +89,8 @@ void verifyExternal(Node *node) // esta funçao não funciona
                 printf("perdeu externo tem interno\n");
                 addInfoToNode(&node->vzext, curr->data.ip, curr->data.port, curr->data.FD);
                 SendEntryMsg(node->ip, node->port, node->vzext.FD);
+                sleep(1);
+                SendSafeMsg(node->vzext.ip, node->vzext.port, node->vzext.FD);
                 updateInternalsSafe(node);
                 return;
             }
