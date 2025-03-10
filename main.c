@@ -73,6 +73,7 @@ int main(int argc, char *argv[])
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
         FD_SET(fd, &rfds);
+        FD_SET(node.vzext.FD, &rfds);
         curr = node.intr;
         while (curr)
         {
@@ -81,7 +82,8 @@ int main(int argc, char *argv[])
                 maxfd = curr->data.FD;
             curr = curr->next;
         }
-
+        if (node.vzext.FD > maxfd)
+            maxfd = node.vzext.FD;
         counter = select(maxfd + 1, &rfds, NULL, NULL, NULL);
         if (counter == -1)
         {
@@ -91,7 +93,7 @@ int main(int argc, char *argv[])
 
         while (counter--)
         {
-
+            printf("while counter\n");
             if (FD_ISSET(0, &rfds))
             {
                 fgets(command, sizeof(command), stdin);
@@ -116,18 +118,46 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            if (FD_ISSET(node.vzext.FD, &rfds))
+            {
+                printf("recebeu mensagem do externos\n");
+                buffer[0] = 0;
+                int er = read(node.vzext.FD, buffer, sizeof(buffer));
+                if (er == 0)
+                {
+                    printf("o no externo foi desligado\n");
+                    verifyExternal(&node);
+                }
+                if (er == -1)
+                {
+                    perror("read ext");
+                }
+                else
+                {
+                    if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
+                    {
+                        printf("recebeu entry seguido de safe %s : %d \n", ip, port);
+                        handleEntry(&node, node.vzext.FD, ip, port);
+                    }
+                    if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
+                    {
+                        printf("recebeu safe %s : %d \n", ip, port);
+                        handleSafe(&node, ip, port);
+                    }
+                }
+            }
 
             curr = node.intr;
             while (curr)
             {
-                if (FD_ISSET(curr->data.FD, &rfds))
+                if (FD_ISSET(curr->data.FD, &rfds) && curr->data.FD != node.vzext.FD)
                 {
                     buffer[0] = 0;
                     int er = read(curr->data.FD, buffer, sizeof(buffer));
                     if (er == 0 && strcmp(curr->data.ip, node.vzext.ip) == 0 && curr->data.port == node.vzext.port)
                     {
                         printf("o no externo foi desligado\n");
-                        verifyExternal(&node);
+                        // verifyExternal(&node);
                     }
                     else
                     {
@@ -149,7 +179,6 @@ int main(int argc, char *argv[])
                         {
                             printf("recebeu entry seguido de safe %s : %d \n", ip, port);
                             handleEntry(&node, curr->data.FD, ip, port);
-                            handleSafe(&node, node.ip, node.port);
                         }
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
                         {

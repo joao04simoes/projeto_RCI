@@ -61,6 +61,7 @@ void handleEntry(Node *node, int newfd, char *ip, int port)
         printf("enviar mensagem de entry e safe %s:%d\n", node->ip, node->port);
         addInfoToNode(&node->vzext, ip, port, newfd);
         SendEntryMsg(node->ip, node->port, newfd);
+        sleep(1);
         updateInternalsSafe(node);
     }
 }

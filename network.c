@@ -83,6 +83,7 @@ void JoinNet(Node *node, char *Net)
         printf("Erro no registo\n");
     }
     freeaddrinfo(res);
+
     close(fd);
     return;
 }
@@ -90,10 +91,9 @@ void JoinNet(Node *node, char *Net)
 void directJoin(Node *node, char *connectIP, int connectTCP)
 {
     struct addrinfo hints, *res;
-    int errcode, JoinFD, port, port2;
-    char cmd[15], ip[20];
+    int errcode, JoinFD;
+
     char portStr[6];
-    char cmd2[15], ip2[20];
 
     if (strcmp(connectIP, "0.0.0.0") == 0)
     {
@@ -135,25 +135,9 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     strcpy(node->vzext.ip, connectIP);
     node->vzext.FD = JoinFD;
 
-    char RecMsg[128];
-
     SendEntryMsg(node->ip, node->port, JoinFD);
-    read(JoinFD, RecMsg, sizeof(RecMsg));
-    if (sscanf(RecMsg, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
-    {
-        printf("recebeu safe %s : %d \n", ip, port);
-        handleSafe(node, ip, port);
-        addInternalNeighbor(node, JoinFD, node->vzext.ip, node->vzext.port);
-    }
-    else
-    {
-        if (sscanf(RecMsg, "%s %s %d\n", cmd2, ip2, &port2) == 3 && strcmp(cmd2, "ENTRY") == 0)
-        {
-            printf("recebeu entry seguido de safe %s : %d \n", ip2, port2);
-            handleEntry(node, JoinFD, ip, port);
-            handleSafe(node, node->ip, node->port);
-        }
-    }
+
     freeaddrinfo(res);
+    printf("saida do direct join\n");
     return;
 }
