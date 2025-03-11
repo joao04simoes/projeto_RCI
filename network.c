@@ -57,6 +57,10 @@ void JoinNet(Node *node, char *Net)
     {
         directJoin(node, curr->data.ip, curr->data.port);
     }
+    else
+    {
+        addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
+    }
 
     sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);
     n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
@@ -97,7 +101,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
 
     if (strcmp(connectIP, "0.0.0.0") == 0)
     {
-        printf("ip 0.0.0.0");
+        printf("ip 0.0.0.0 criar a rede\n");
         addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
         return;
     }
@@ -124,7 +128,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
         printf("erro no getaddrinfo\n");
         ExitNdn(node);
     }
-    printf("conectando %s : %d\n", connectIP, connectTCP);
+
     if (connect(JoinFD, res->ai_addr, res->ai_addrlen) == -1)
     {
         printf("erro no connect\n");
@@ -138,6 +142,6 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     SendEntryMsg(node->ip, node->port, JoinFD);
 
     freeaddrinfo(res);
-    printf("saida do direct join\n");
+
     return;
 }

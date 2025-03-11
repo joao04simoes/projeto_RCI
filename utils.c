@@ -54,9 +54,9 @@ void executeCommand(char *command, Node *node)
     }
     if (strcmp(cmd, "st") == 0)
     {
-
-        printf("Vizinho externo: %s:%d\n", node->vzext.ip, node->vzext.port);
         NodeList *curr = node->intr;
+        printf("Nó: %s:%d\n", node->ip, node->port);
+        printf("Vizinho externo: %s:%d\n", node->vzext.ip, node->vzext.port);
 
         printf("Vizinhos internos:\n");
         while (curr)

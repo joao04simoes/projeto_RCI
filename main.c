@@ -53,6 +53,8 @@ int main(int argc, char *argv[])
     node.vzext.port = -1;
     node.vzsalv.port = -1;
     node.netlist = NULL;
+    node.vzext.ip[0] = '\0';
+    node.vzsalv.ip[0] = '\0';
 
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         exit(1);
@@ -94,13 +96,13 @@ int main(int argc, char *argv[])
         counter = select(maxfd + 1, &rfds, NULL, NULL, NULL);
         if (counter == -1)
         {
-            perror("select");
-            exit(1);
+            printf("erro no select\n");
+            ExitNdn(&node);
         }
 
         while (counter--)
         {
-            printf("while counter\n");
+
             if (FD_ISSET(0, &rfds))
             {
                 fgets(command, sizeof(command), stdin);
@@ -112,7 +114,8 @@ int main(int argc, char *argv[])
                 recv(newfd, buffer, sizeof(buffer), MSG_DONTWAIT);
                 if (newfd == -1)
                 {
-                    perror("accept");
+                    printf("erro accepting socket\n");
+                    ExitNdn(&node);
                 }
                 else
                 {
@@ -120,28 +123,28 @@ int main(int argc, char *argv[])
                         maxfd = newfd;
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                     {
-                        printf("recebeu direct join %s : %d \n", ip, port);
+                        printf("recebeu entry %s : %d \n", ip, port);
                         handleEntry(&node, newfd, ip, port);
                     }
                 }
             }
             if (FD_ISSET(node.vzext.FD, &rfds))
             {
-                printf("recebeu mensagem do externos\n");
+
                 buffer[0] = 0;
                 int er = read(node.vzext.FD, buffer, sizeof(buffer));
                 if (er == 0)
                 {
-                    printf("o no externo foi desligado\n");
+                    printf("o nó externo foi desligado\n");
                     verifyExternal(&node);
                 }
                 if (er == -1)
                 {
-                    perror("read ext");
+                    printf("erro reading external\n");
+                    ExitNdn(&node);
                 }
                 else
                 {
-                    printf("recebeu %s\n", buffer);
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                     {
                         printf("recebeu entry %s : %d \n", ip, port);
@@ -161,18 +164,19 @@ int main(int argc, char *argv[])
             {
                 if (FD_ISSET(curr->data.FD, &rfds) && curr->data.FD != node.vzext.FD)
                 {
+                    printf("nos internos\n");
                     buffer[0] = 0;
                     int er = read(curr->data.FD, buffer, sizeof(buffer));
-                    if (er == 0 && strcmp(curr->data.ip, node.vzext.ip) == 0 && curr->data.port == node.vzext.port)
-
+                    if (er == 0)
                     {
-                        printf("o no interno foi desligado\n");
+                        printf("o nó interno foi desligado\n");
                         removeInternalNeighbor(&node, curr->data.FD);
                     }
 
                     if (er == -1)
                     {
-                        perror("read intr");
+                        printf("erro reading internal\n");
+                        ExitNdn(&node);
                     }
                     else
                     {
