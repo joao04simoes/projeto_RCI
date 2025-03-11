@@ -2,25 +2,37 @@
 #include "network.h"
 #include "utils.h"
 
-char *regIP;
-char *regUDP;
-
 int main(int argc, char *argv[])
 {
     Node node;
-    if (argc < 4)
+    char defaultIP[16] = "193.136.138.142";
+    char defaultPort[6] = "59000";
+
+    if (argc > 4)
+    {
+        printf("mais de 4 argc\n");
+        if (argv[4] != NULL)
+        {
+            printf("arg 4\n");
+            strncpy(defaultIP, argv[4], sizeof(defaultIP) - 1);
+        }
+        if (argv[5] != NULL)
+        {
+            printf("arg 5\n");
+            strncpy(defaultPort, argv[5], sizeof(defaultPort) - 1);
+        }
+    }
+
+    // Se houver argumentos a mais, erro
+    if (argc > 6)
     {
         fprintf(stderr, "Uso correto: %s cache IP TCP regIP regUDP\n", argv[0]);
         exit(1);
     }
-    else
-    {
-        regIP = argv[4];
-        regUDP = argv[5];
-    }
+    printf("copy to node\n");
+    strncpy(node.regIP, defaultIP, sizeof(defaultIP) - 1);
+    strncpy(node.regUDP, defaultPort, sizeof(defaultPort) - 1);
 
-    strcat(node.regIP, "193.136.138.142");
-    strcat(node.regUDP, "59000");
     // int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
