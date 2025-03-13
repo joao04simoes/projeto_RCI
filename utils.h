@@ -12,5 +12,6 @@ void executeCommand(char *command, Node *node);
 void ExitNdn(Node *node);
 void MakeNetList(char *buffer, Node *node);
 void leaveNet(Node *node);
+void excuteCommandFromBuffer(char *buffer, Node *node, int fd);
 
 #endif // UTILS_H

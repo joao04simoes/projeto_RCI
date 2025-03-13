@@ -104,6 +104,30 @@ void MakeNetList(char *buffer, Node *node)
     }
 }
 
+void excuteCommandFromBuffer(char *buffer, Node *node, int fd)
+{
+    char ip[20];
+    int port;
+    char cmd[20];
+    char *line = strtok(buffer, "\n"); // Divide o buffer por linhas
+    if (line && strncmp(line, "NODESLIST", 9) == 0)
+    {
+        line = strtok(NULL, "\n"); // Pula a primeira linha (NODESLIST net)
+    }
+
+    while (line)
+    {
+        if (sscanf(line, "%s %s %d\n", cmd, ip, &port) == 3)
+        {
+            if (strcmp(cmd, "ENTRY") == 0)
+                handleEntry(node, fd, ip, port);
+            if (strcmp(cmd, "SAFE") == 0)
+                handleSafe(node, ip, port);
+        }
+        line = strtok(NULL, "\n"); // Próxima linha
+    }
+}
+
 void leaveNet(Node *node)
 {
 
@@ -115,8 +139,15 @@ void leaveNet(Node *node)
     int errcode;
 
     NodeList *curr = node->intr, *next = NULL;
+
+    // remover externo porque pode não ser interno
+    close(node->vzext.FD);
+    removeInternalNeighbor(node, node->vzext.FD);
+    addInfoToNode(&node->vzext, "", -1, -1);
+    addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
     while (curr)
     {
+        removeInternalNeighbor(node, curr->data.FD);
         close(curr->data.FD);
         curr = curr->next;
     }

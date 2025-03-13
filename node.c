@@ -62,7 +62,6 @@ void handleEntry(Node *node, int newfd, char *ip, int port)
         printf("enviar mensagem de entry %s:%d\n", node->ip, node->port);
         addInfoToNode(&node->vzext, ip, port, newfd);
         SendEntryMsg(node->ip, node->port, newfd);
-        sleep(1);
         printf("enviar mensagemde safe %s:%d\n", node->vzext.ip, node->vzext.port);
         SendSafeMsg(node->vzext.ip, node->vzext.port, newfd);
         updateInternalsSafe(node);
@@ -91,7 +90,6 @@ void verifyExternal(Node *node) // esta funçao não funciona
                 addInfoToNode(&node->vzext, curr->data.ip, curr->data.port, curr->data.FD);
                 printf("enviar mensagem de entry %s:%d\n", node->ip, node->port);
                 SendEntryMsg(node->ip, node->port, node->vzext.FD);
-                sleep(1);
                 printf("enviar mensagemde safe %s:%d\n", node->vzext.ip, node->vzext.port);
                 SendSafeMsg(node->vzext.ip, node->vzext.port, node->vzext.FD);
                 updateInternalsSafe(node);

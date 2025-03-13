@@ -47,8 +47,6 @@ int main(int argc, char *argv[])
     char command[128];
     NodeList *curr;
 
-    char cmd[15], ip[20];
-    int port;
     int fd, newfd = -1, counter, maxfd;
     fd_set rfds;
     char buffer[128];
@@ -96,6 +94,7 @@ int main(int argc, char *argv[])
         FD_SET(fd, &rfds);
         FD_SET(node.vzext.FD, &rfds);
         curr = node.intr;
+        maxfd = fd;
         while (curr)
         {
             FD_SET(curr->data.FD, &rfds);
@@ -133,11 +132,8 @@ int main(int argc, char *argv[])
                 {
                     if (newfd > maxfd)
                         maxfd = newfd;
-                    if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
-                    {
-                        printf("recebeu entry %s : %d \n", ip, port);
-                        handleEntry(&node, newfd, ip, port);
-                    }
+                    excuteCommandFromBuffer(buffer, &node, newfd);
+                    // handleEntry(&node, newfd, ip, port);
                 }
             }
             if (FD_ISSET(node.vzext.FD, &rfds))
@@ -157,6 +153,8 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
+                    excuteCommandFromBuffer(buffer, &node, node.vzext.FD);
+                    /*
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                     {
                         printf("recebeu entry %s : %d \n", ip, port);
@@ -167,7 +165,7 @@ int main(int argc, char *argv[])
                     {
                         printf("recebeu safe %s : %d \n", ip, port);
                         handleSafe(&node, ip, port);
-                    }
+                    }*/
                 }
             }
 
@@ -192,7 +190,8 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
-
+                        excuteCommandFromBuffer(buffer, &node, curr->data.FD);
+                        /*
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
                         {
                             printf("recebeu entry %s : %d \n", ip, port);
@@ -203,7 +202,7 @@ int main(int argc, char *argv[])
                         {
                             printf("recebeu safe %s : %d \n", ip, port);
                             handleSafe(&node, ip, port);
-                        }
+                        }*/
                     }
                 }
                 curr = curr->next;

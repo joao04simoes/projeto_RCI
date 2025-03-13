@@ -134,10 +134,10 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
         printf("erro no connect\n");
         ExitNdn(node);
     }
-
-    node->vzext.port = connectTCP;
+    addInfoToNode(&node->vzext, connectIP, connectTCP, JoinFD);
+    /*node->vzext.port = connectTCP;
     strcpy(node->vzext.ip, connectIP);
-    node->vzext.FD = JoinFD;
+    node->vzext.FD = JoinFD;*/
 
     SendEntryMsg(node->ip, node->port, JoinFD);
 
