@@ -24,6 +24,26 @@ typedef struct NodeList
     struct NodeList *next;
 } NodeList;
 
+typedef struct TableInfo
+{
+    int fd;
+    int state; // 0 reponse 1 await 2 closed
+    struct TableInfo *next
+} TableInfo;
+
+typedef struct interestTable
+{
+    char objectName[128];
+    struct TableInfo *entries;
+    struct interestTable *next;
+} interestTable;
+
+typedef struct Names
+{
+    char name[101];
+    struct Names *next;
+} Names;
+
 // Node structure
 typedef struct
 {
@@ -38,6 +58,10 @@ typedef struct
     char NET[4];
     char regIP[20];
     char regUDP[6];
+    interestTable *Table;
+    Names *Objects;
+    char *cache;
+
 } Node;
 
 // Function prototypes

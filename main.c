@@ -65,6 +65,8 @@ int main(int argc, char *argv[])
     node.netlist = NULL;
     node.vzext.ip[0] = '\0';
     node.vzsalv.ip[0] = '\0';
+    node.Table = NULL;
+    // node.cache = (char *)malloc(cache * sizeof(char));
 
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         exit(1);
