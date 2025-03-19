@@ -3,29 +3,95 @@
 #include <string.h>
 #include "object.h"
 #include "utilsForObject.h"
+#include "cache.h"
+
+void addObjectToList(Node *node, char *objectName)
+{
+    Names *newObject = (Names *)malloc(sizeof(Names));
+    strcpy(newObject->name, objectName);
+    newObject->next = node->Objects;
+    node->Objects = newObject;
+}
+
+char *findObjectInLIst(Node *node, char *objectName)
+{
+    Names *curr = node->Objects;
+    while (curr)
+    {
+        if (strcmp(curr->name, objectName) == 0)
+        {
+            return curr->name;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+char *findObjectInCache(Node *node, char *objectName)
+{
+    int i;
+    for (i = 0; i < node->cache->end; i++)
+    {
+        if (strcmp(node->cache->items[i].name, objectName) == 0)
+        {
+            return node->cache->items[i].name;
+        }
+    }
+    return NULL;
+}
 
 void retrieveObject(Node *node, char *objectName)
 {
-    // verificar se tenho o obejeto
 
-    TableInfo *objectEntry;
+    interestTable *objectEntry;
+    char *object;
 
-    objectEntry = createEntryToInterestTable(node, objectName);
-    sendInterestMessageToallInterface(node, objectName, objectEntry, -1);
+    object = findObjectInLIst(node, objectName);
+    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    {
+        printf("tem o objeto %s\n", object);
+        return;
+    }
+    object = findObjectInCache(node, objectName);
+    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    {
+        printf("tem o objeto %s\n", object);
+        return;
+    }
+
+    printf("retrieve\n");
+    if (node->intr != NULL || node->vzext.FD != -1)
+    {
+        printf("dentro do if retrieve\n");
+        objectEntry = createEntryToInterestTable(node, objectName);
+        sendInterestMessageToallInterface(node, objectName, objectEntry, -1);
+    }
 }
 
 void handleInterest(Node *node, int fd, char *objectName)
 {
-    interestTable *objectEntry, *objectEntry;
+    interestTable *objectEntry;
     TableInfo *fdEntry, *curr;
     int VerState = 0;
+    char *object;
 
-    // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    object = findObjectInLIst(node, objectName);
+    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    {
+        sendObjectMessage(fd, objectName);
+        return;
+    }
+    object = findObjectInCache(node, objectName);
+    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    {
+        sendObjectMessage(fd, objectName);
+        return;
+    }
 
     objectEntry = findObjectInTable(node, objectName); // se não tiver mas houver entrada passar fd para o esatdo de resposta
     if (objectEntry != NULL)
     {
-        fdEntry = findFdEntryInEntries(objectEntry, fd);
+        fdEntry = findFdEntryInEntries(objectEntry->entries, fd);
         if (fdEntry != NULL)
         { // if fd in entry list in state 1 (await) put state as 0 reponse else create the entry
             fdEntry->state = 0;
@@ -61,30 +127,40 @@ void handleInterest(Node *node, int fd, char *objectName)
         }
 
         // else enviar mensagens de objeto e criar entrada na tabela
+        printf("enviar mesnagem de intereste\n");
         objectEntry = createEntryToInterestTable(node, objectName);
+        createEntryToObjectList(fd, 0, objectEntry);
         sendInterestMessageToallInterface(node, objectName, objectEntry, fd);
     }
 }
 
-void handleObjectMessage(Node *node, int fd, char *objectName)
+void handleObjectMessage(Node *node, char *objectName)
 {
     interestTable *objectEntry;
     TableInfo *fdEntry;
+    printf("handle object\n");
     objectEntry = findObjectInTable(node, objectName);
+    printf("object entry\n");
     if (objectEntry != NULL)
     {
+        printf("object entry\n");
         fdEntry = objectEntry->entries;
         while (fdEntry)
         {
             if (fdEntry->state == 0)
             {
+                printf("enviar o objeto \n");
                 sendObjectMessage(fdEntry->fd, objectName);
             }
+            fdEntry = fdEntry->next;
         }
-
+        printf("adiconar objeto a cache\n");
         // apagar entrada na tabela e
         removeEntryFromInterestTable(node, objectName);
-        // guardar o objeto em cahe
+        printf("adiconar objeto a cache\n");
+        addToCache(node, objectName);
+        printf("%s\n", node->cache->items[0].name);
+        return;
     }
 }
 
@@ -96,7 +172,7 @@ void handleAbsenceMessage(Node *node, int fd, char *objectName)
     objectEntry = findObjectInTable(node, objectName);
     if (objectEntry != NULL)
     {
-        fdEntry = findFdEntryInEntries(objectEntry, fd);
+        fdEntry = findFdEntryInEntries(objectEntry->entries, fd);
         fdEntry->state = 2; // estado fechado
     }
 }

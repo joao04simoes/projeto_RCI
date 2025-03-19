@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "network.h"
+#include "object.h"
 
 // Checks if a given IP and port are already in the internal neighbors list
 int isInternal(Node *node, char *ip, int port)
@@ -33,6 +34,19 @@ void executeCommand(char *command, Node *node)
     if (strcmp(cmd, "x") == 0)
     {
         ExitNdn(node);
+    }
+    if (strcmp(cmd, "c") == 0)
+    {
+        addObjectToList(node, arg1);
+        return;
+    }
+
+    if (strcmp(cmd, "r") == 0)
+    {
+        retrieveObject(node, arg1);
+        printf("voltou do retrieve\n");
+
+        return;
     }
 
     if (strcmp(cmd, "j") == 0)
@@ -106,26 +120,42 @@ void MakeNetList(char *buffer, Node *node)
 
 void excuteCommandFromBuffer(char *buffer, Node *node, int fd)
 {
+    char objectName[101];
     char ip[20];
     int port;
     char cmd[20];
     char *line = strtok(buffer, "\n"); // Divide o buffer por linhas
-    if (line && strncmp(line, "NODESLIST", 9) == 0)
-    {
-        line = strtok(NULL, "\n"); // Pula a primeira linha (NODESLIST net)
-    }
 
     while (line)
     {
+        printf("line\n");
         if (sscanf(line, "%s %s %d\n", cmd, ip, &port) == 3)
         {
             if (strcmp(cmd, "ENTRY") == 0)
                 handleEntry(node, fd, ip, port);
             if (strcmp(cmd, "SAFE") == 0)
                 handleSafe(node, ip, port);
+            line = strtok(NULL, "\n"); // Próxima linha
+            continue;
+        }
+
+        if (sscanf(line, "%s %s\n", cmd, objectName) == 2)
+        {
+            if (strcmp(cmd, "OBJECT") == 0)
+                handleObjectMessage(node, objectName);
+
+            if (strcmp(cmd, "INTEREST") == 0)
+                handleInterest(node, fd, objectName);
+
+            if (strcmp(cmd, "NOOBJECT") == 0)
+                handleAbsenceMessage(node, fd, objectName);
+
+            line = strtok(NULL, "\n"); // Próxima linha
+            continue;
         }
         line = strtok(NULL, "\n"); // Próxima linha
     }
+    return;
 }
 
 void leaveNet(Node *node)

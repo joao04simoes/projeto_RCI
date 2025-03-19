@@ -69,9 +69,16 @@ void sendInterestMessageToallInterface(Node *node, char *objectName, interestTab
 
 void removeEntryFromInterestTable(Node *node, char *objectName)
 {
-    TableInfo *curr, *tmp;
-    interestTable *prev = NULL, *currTable;
+    if (node == NULL || node->Table == NULL)
+    {
+        printf("Erro: Tabela vazia ou nó inválido\n");
+        return;
+    }
 
+    TableInfo *curr, *tmp;
+    interestTable *prev = NULL, *currTable = node->Table;
+
+    // Procurar a entrada na tabela
     while (currTable)
     {
         if (strcmp(currTable->objectName, objectName) == 0)
@@ -81,6 +88,15 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
         prev = currTable;
         currTable = currTable->next;
     }
+
+    // Se não encontrou o objeto, sair da função
+    if (currTable == NULL)
+    {
+        printf("Erro: Objeto '%s' não encontrado na tabela\n", objectName);
+        return;
+    }
+
+    // Liberar todas as entradas associadas ao objeto
     curr = currTable->entries;
     while (curr)
     {
@@ -89,28 +105,31 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
         free(tmp);
     }
 
+    // Remover a entrada da tabela de interesse
     if (prev == NULL)
     {
+        // O objeto a remover está no início da tabela
         node->Table = currTable->next;
-        free(currTable);
     }
     else
     {
         prev->next = currTable->next;
-        free(currTable);
     }
+
+    free(currTable);
 }
+
 void createEntryToObjectList(int fd, int state, interestTable *entry)
 {
     TableInfo *newEntry = (TableInfo *)malloc(sizeof(TableInfo));
     newEntry->fd = fd;
     newEntry->state = state;
+    newEntry->next = entry->entries; // Maintain the linked list
     entry->entries = newEntry;
 }
-
 interestTable *createEntryToInterestTable(Node *node, char *objectName)
 {
-    TableInfo *fdEntry;
+
     interestTable *newEntry = (interestTable *)malloc(sizeof(interestTable));
     strcpy(newEntry->objectName, objectName);
     newEntry->next = node->Table;

@@ -28,7 +28,7 @@ typedef struct TableInfo
 {
     int fd;
     int state; // 0 reponse 1 await 2 closed
-    struct TableInfo *next
+    struct TableInfo *next;
 } TableInfo;
 
 typedef struct interestTable
@@ -43,6 +43,18 @@ typedef struct Names
     char name[101];
     struct Names *next;
 } Names;
+
+typedef struct
+{
+    char name[101];
+} CacheItem;
+
+typedef struct
+{
+    CacheItem *items;
+    int end;
+    int maxSize;
+} Cache;
 
 // Node structure
 typedef struct
@@ -60,7 +72,7 @@ typedef struct
     char regUDP[6];
     interestTable *Table;
     Names *Objects;
-    char *cache;
+    Cache *cache;
 
 } Node;
 

@@ -1,6 +1,7 @@
 #include "node.h"
 #include "network.h"
 #include "utils.h"
+#include "cache.h"
 
 int main(int argc, char *argv[])
 {
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
     strncpy(node.regIP, defaultIP, sizeof(defaultIP) - 1);
     strncpy(node.regUDP, defaultPort, sizeof(defaultPort) - 1);
 
-    // int cache = atoi(argv[1]);
+    int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
 
@@ -66,7 +67,10 @@ int main(int argc, char *argv[])
     node.vzext.ip[0] = '\0';
     node.vzsalv.ip[0] = '\0';
     node.Table = NULL;
-    // node.cache = (char *)malloc(cache * sizeof(char));
+    node.Objects = NULL;
+    printf("init cache\n");
+    initCache(&node, cache);
+    printf("fez init\n");
 
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
         exit(1);
@@ -91,6 +95,7 @@ int main(int argc, char *argv[])
     freeaddrinfo(res);
     while (1)
     {
+        printf("while 1\n");
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
         FD_SET(fd, &rfds);
@@ -155,6 +160,7 @@ int main(int argc, char *argv[])
                 }
                 else
                 {
+                    printf("executar comando\n");
                     excuteCommandFromBuffer(buffer, &node, node.vzext.FD);
                     /*
                     if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
@@ -192,6 +198,7 @@ int main(int argc, char *argv[])
                     }
                     else
                     {
+                        printf("executar comando nos internos\n");
                         excuteCommandFromBuffer(buffer, &node, curr->data.FD);
                         /*
                         if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
