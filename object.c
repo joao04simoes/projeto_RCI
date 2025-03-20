@@ -159,7 +159,7 @@ void handleObjectMessage(Node *node, char *objectName)
         removeEntryFromInterestTable(node, objectName);
         printf("adiconar objeto a cache\n");
         addToCache(node, objectName);
-        printf("%s\n", node->cache->items[0].name);
+
         return;
     }
 }
@@ -174,5 +174,24 @@ void handleAbsenceMessage(Node *node, int fd, char *objectName)
     {
         fdEntry = findFdEntryInEntries(objectEntry->entries, fd);
         fdEntry->state = 2; // estado fechado
+    }
+}
+
+void deleteObject(Node *node, char *objectName)
+{
+
+    Names *curr = node->Objects, *prev = NULL;
+    while (curr)
+    {
+        if (strcmp(curr->name, objectName) == 0)
+        {
+            if (prev == NULL)
+                node->Objects = curr->next;
+            else
+                prev->next = curr->next;
+            free(curr);
+        }
+        prev = curr;
+        curr = curr->next;
     }
 }

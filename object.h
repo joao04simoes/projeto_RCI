@@ -13,5 +13,6 @@ void AddEntryToInterestTable(Node *node, interestTable *entry);
 void handleInterest(Node *node, int fd, char *objectName);
 void handleAbsenceMessage(Node *node, int fd, char *objectName);
 char *findObjectInCache(Node *node, char *objectName);
+void deleteObject(Node *node, char *objectName);
 
 #endif // OBJECT_H

@@ -55,11 +55,12 @@ void JoinNet(Node *node, char *Net)
     curr = node->netlist;
     if (curr != NULL)
     {
+        curr = randomNode(curr);
         directJoin(node, curr->data.ip, curr->data.port);
     }
     else
     {
-        addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
+        // addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
     }
 
     sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);

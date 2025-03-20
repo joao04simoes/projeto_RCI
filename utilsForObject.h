@@ -12,5 +12,6 @@ void sendInterestMessageToallInterface(Node *node, char *objectName, interestTab
 void removeEntryFromInterestTable(Node *node, char *objectName);
 void createEntryToObjectList(int fd, int state, interestTable *entry);
 interestTable *createEntryToInterestTable(Node *node, char *objectName);
+void showInterestTable(Node *node);
 
 #endif

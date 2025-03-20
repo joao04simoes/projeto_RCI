@@ -110,6 +110,7 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
     {
         // O objeto a remover está no início da tabela
         node->Table = currTable->next;
+        printf("first object\n");
     }
     else
     {
@@ -134,5 +135,23 @@ interestTable *createEntryToInterestTable(Node *node, char *objectName)
     strcpy(newEntry->objectName, objectName);
     newEntry->next = node->Table;
     node->Table = newEntry;
+    node->Table->entries = NULL;
     return newEntry;
+}
+
+void showInterestTable(Node *node)
+{
+    interestTable *curr = node->Table;
+    TableInfo *currEntry;
+    while (curr)
+    {
+        printf("Object: %s\n", curr->objectName);
+        currEntry = curr->entries;
+        while (currEntry)
+        {
+            printf("  FD: %d, State: %d\n", currEntry->fd, currEntry->state);
+            currEntry = currEntry->next;
+        }
+        curr = curr->next;
+    }
 }

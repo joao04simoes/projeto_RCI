@@ -86,6 +86,7 @@ void verifyExternal(Node *node) // esta funçao não funciona
         {
             if (curr->data.FD != -1)
             {
+                curr = randomNode(curr);
                 printf("perdeu externo tem interno\n");
                 addInfoToNode(&node->vzext, curr->data.ip, curr->data.port, curr->data.FD);
                 printf("enviar mensagem de entry %s:%d\n", node->ip, node->port);

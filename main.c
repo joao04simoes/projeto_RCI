@@ -162,18 +162,6 @@ int main(int argc, char *argv[])
                 {
                     printf("executar comando\n");
                     excuteCommandFromBuffer(buffer, &node, node.vzext.FD);
-                    /*
-                    if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
-                    {
-                        printf("recebeu entry %s : %d \n", ip, port);
-                        handleEntry(&node, node.vzext.FD, ip, port);
-                    }
-
-                    if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
-                    {
-                        printf("recebeu safe %s : %d \n", ip, port);
-                        handleSafe(&node, ip, port);
-                    }*/
                 }
             }
 
@@ -200,18 +188,6 @@ int main(int argc, char *argv[])
                     {
                         printf("executar comando nos internos\n");
                         excuteCommandFromBuffer(buffer, &node, curr->data.FD);
-                        /*
-                        if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "ENTRY") == 0)
-                        {
-                            printf("recebeu entry %s : %d \n", ip, port);
-                            handleEntry(&node, curr->data.FD, ip, port);
-                        }
-
-                        if (sscanf(buffer, "%s %s %d\n", cmd, ip, &port) == 3 && strcmp(cmd, "SAFE") == 0)
-                        {
-                            printf("recebeu safe %s : %d \n", ip, port);
-                            handleSafe(&node, ip, port);
-                        }*/
                     }
                 }
                 curr = curr->next;

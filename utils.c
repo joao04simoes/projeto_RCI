@@ -4,6 +4,8 @@
 #include <string.h>
 #include "network.h"
 #include "object.h"
+#include "utilsForObject.h"
+#include "cache.h"
 
 // Checks if a given IP and port are already in the internal neighbors list
 int isInternal(Node *node, char *ip, int port)
@@ -41,6 +43,18 @@ void executeCommand(char *command, Node *node)
         return;
     }
 
+    if (strcmp(cmd, "sn") == 0)
+    {
+        showNames(node);
+        return;
+    }
+
+    if (strcmp(cmd, "dl") == 0)
+    {
+        deleteObject(node, arg1);
+        return;
+    }
+
     if (strcmp(cmd, "r") == 0)
     {
         retrieveObject(node, arg1);
@@ -61,6 +75,14 @@ void executeCommand(char *command, Node *node)
         directJoin(node, arg1, arg2);
         return;
     }
+
+    if (strcmp(cmd, "si") == 0)
+    {
+        printf("show interest table\n");
+        showInterestTable(node);
+        return;
+    }
+
     if (strcmp(cmd, "l") == 0)
     {
         leaveNet(node);
@@ -230,4 +252,42 @@ void leaveNet(Node *node)
             printf("Erro na remoção\n");
         }
     }
+}
+
+void showNames(Node *node)
+{
+    Names *curr = node->Objects;
+    printf("Objetos do Nó:\n");
+    while (curr)
+    {
+        printf("%s\n", curr->name);
+        curr = curr->next;
+    }
+    printCache(node);
+}
+
+NodeList *randomNode(NodeList *nodeList)
+{
+    NodeList *curr;
+    int counter = 0;
+
+    while (curr)
+    {
+        counter++;
+        curr = curr->next;
+    }
+    curr = nodeList;
+
+    int random = rand() % counter;
+    int i = 0;
+    while (curr)
+    {
+        if (i == random)
+        {
+            return curr;
+        }
+        curr = curr->next;
+        i++;
+    }
+    return nodeList;
 }

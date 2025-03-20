@@ -13,5 +13,7 @@ void ExitNdn(Node *node);
 void MakeNetList(char *buffer, Node *node);
 void leaveNet(Node *node);
 void excuteCommandFromBuffer(char *buffer, Node *node, int fd);
+void showNames(Node *node);
+NodeList *randomNode(NodeList *nodeList);
 
 #endif // UTILS_H

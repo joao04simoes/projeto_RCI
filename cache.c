@@ -54,3 +54,16 @@ void addToCache(Node *node, char *data)
     printf("antes de atualiar o end\n");
     cache->end = (cache->end + 1) % cache->maxSize;
 }
+
+void printCache(Node *node)
+{
+
+    printf("Objetos na Cache:\n");
+    if (node->cache != NULL)
+    {
+        for (int i = 0; i < node->cache->maxSize; i++)
+        {
+            printf("%s\n", node->cache->items[i].name);
+        }
+    }
+}
