@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
                         printf("erro reading internal\n");
                         ExitNdn(&node);
                     }
-                    else
+                    if (er > 0)
                     {
                         printf("executar comando nos internos\n");
                         excuteCommandFromBuffer(buffer, &node, curr->data.FD);

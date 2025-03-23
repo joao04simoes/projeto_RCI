@@ -3,31 +3,15 @@
 #include <string.h>
 #include "utilsForObject.h"
 
-void sendInterestMessage(int fd, char *objectName)
+TableInfo *findFdEntryInEntries(TableInfo *object, int fd, int state)
 {
-    char buffer[128];
-    sprintf(buffer, "INTEREST %s\n", objectName);
-    write(fd, buffer, strlen(buffer));
-}
-void sendObjectMessage(int fd, char *objectName)
-{
-    char buffer[128];
-    sprintf(buffer, "OBJECT %s\n", objectName);
-    write(fd, buffer, strlen(buffer));
-}
-void sendAbsenceObjectMessage(int fd, char *objectName)
-{
-    char buffer[128];
-    sprintf(buffer, "NOOBJECT %s\n", objectName);
-    write(fd, buffer, strlen(buffer));
-}
+    if (!object)
+        return NULL; // Evita segmentation fault
 
-TableInfo *findFdEntryInEntries(TableInfo *object, int fd)
-{
     TableInfo *curr = object;
     while (curr)
     {
-        if (curr->fd == fd)
+        if (curr->fd == fd && curr->state == state)
         {
             return curr;
         }
@@ -53,12 +37,15 @@ interestTable *findObjectInTable(Node *node, char *objectName)
 void sendInterestMessageToallInterface(Node *node, char *objectName, interestTable *objectEntry, int fd)
 {
     NodeList *curr = node->intr;
-    sendInterestMessage(node->vzext.FD, objectName);
-    createEntryToObjectList(node->vzext.FD, 1, objectEntry);
-
-    while (curr) // passar isto para uma função
+    if ((fd > 0 && node->vzext.FD != fd) || fd == -1)
     {
-        if (curr->data.FD && node->vzext.FD != curr->data.FD && curr->data.FD != fd) // verificar se manda para o externo
+        sendInterestMessage(node->vzext.FD, objectName);
+        createEntryToObjectList(node->vzext.FD, 1, objectEntry);
+    }
+
+    while (curr)
+    {
+        if (node->vzext.FD != curr->data.FD && curr->data.FD != fd) // verificar se manda para o externo
         {
             sendInterestMessage(curr->data.FD, objectName);
             createEntryToObjectList(curr->data.FD, 1, objectEntry);
@@ -154,4 +141,78 @@ void showInterestTable(Node *node)
         }
         curr = curr->next;
     }
+}
+
+void addObjectToList(Node *node, char *objectName)
+{
+    Names *newObject = (Names *)malloc(sizeof(Names));
+    strcpy(newObject->name, objectName);
+    newObject->next = node->Objects;
+    node->Objects = newObject;
+}
+
+char *findObjectInLIst(Node *node, char *objectName)
+{
+    Names *curr = node->Objects;
+    while (curr)
+    {
+        if (strcmp(curr->name, objectName) == 0)
+        {
+            return curr->name;
+        }
+        curr = curr->next;
+    }
+    return NULL;
+}
+
+char *findObjectInCache(Node *node, char *objectName)
+{
+    int i;
+    for (i = 0; i < node->cache->end; i++)
+    {
+        if (strcmp(node->cache->items[i].name, objectName) == 0)
+        {
+            return node->cache->items[i].name;
+        }
+    }
+    return NULL;
+}
+
+void deleteObject(Node *node, char *objectName)
+{
+
+    Names *curr = node->Objects, *prev = NULL;
+    while (curr)
+    {
+        if (strcmp(curr->name, objectName) == 0)
+        {
+            if (prev == NULL)
+                node->Objects = curr->next;
+            else
+                prev->next = curr->next;
+            free(curr);
+            return;
+        }
+        prev = curr;
+        curr = curr->next;
+    }
+}
+
+void sendInterestMessage(int fd, char *objectName)
+{
+    char buffer[128];
+    sprintf(buffer, "INTEREST %s\n", objectName);
+    write(fd, buffer, strlen(buffer));
+}
+void sendObjectMessage(int fd, char *objectName)
+{
+    char buffer[128];
+    sprintf(buffer, "OBJECT %s\n", objectName);
+    write(fd, buffer, strlen(buffer));
+}
+void sendAbsenceObjectMessage(int fd, char *objectName)
+{
+    char buffer[128];
+    sprintf(buffer, "NOOBJECT %s\n", objectName);
+    write(fd, buffer, strlen(buffer));
 }

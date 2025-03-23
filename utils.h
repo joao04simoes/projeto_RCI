@@ -15,5 +15,6 @@ void leaveNet(Node *node);
 void excuteCommandFromBuffer(char *buffer, Node *node, int fd);
 void showNames(Node *node);
 NodeList *randomNode(NodeList *nodeList);
+void memCleanup(Node *node);
 
 #endif // UTILS_H

@@ -111,10 +111,14 @@ void executeCommand(char *command, Node *node)
 }
 void ExitNdn(Node *node)
 {
-
     leaveNet(node);
 
-    close(node->FD);
+    if (close(node->FD) == -1)
+    {
+        perror("Erro ao fechar o socket");
+    }
+    memCleanup(node);
+
     exit(0);
 }
 
@@ -193,8 +197,9 @@ void leaveNet(Node *node)
     NodeList *curr = node->intr, *next = NULL;
 
     // remover externo porque pode não ser interno
-    close(node->vzext.FD);
+
     removeInternalNeighbor(node, node->vzext.FD);
+    close(node->vzext.FD);
     addInfoToNode(&node->vzext, "", -1, -1);
     addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
     while (curr)
@@ -290,4 +295,34 @@ NodeList *randomNode(NodeList *nodeList)
         i++;
     }
     return nodeList;
+}
+
+void memCleanup(Node *node)
+{
+    // limpar a cache e lisatde objeos
+    Names *curr = node->Objects, *next = NULL;
+    while (curr)
+    {
+        next = curr->next;
+        free(curr);
+        curr = next;
+    }
+    free(node->cache->items);
+    free(node->cache);
+    // free tabela de interrese
+    interestTable *currTable = node->Table, *nextTable = NULL;
+    TableInfo *currInfo = NULL, *nextInfo = NULL;
+    while (currTable)
+    {
+        nextTable = currTable->next;
+        currInfo = currTable->entries;
+        while (currInfo)
+        {
+            nextInfo = currInfo->next;
+            free(currInfo);
+            currInfo = nextInfo;
+        }
+        free(currTable);
+        currTable = nextTable;
+    }
 }

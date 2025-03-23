@@ -5,41 +5,6 @@
 #include "utilsForObject.h"
 #include "cache.h"
 
-void addObjectToList(Node *node, char *objectName)
-{
-    Names *newObject = (Names *)malloc(sizeof(Names));
-    strcpy(newObject->name, objectName);
-    newObject->next = node->Objects;
-    node->Objects = newObject;
-}
-
-char *findObjectInLIst(Node *node, char *objectName)
-{
-    Names *curr = node->Objects;
-    while (curr)
-    {
-        if (strcmp(curr->name, objectName) == 0)
-        {
-            return curr->name;
-        }
-        curr = curr->next;
-    }
-    return NULL;
-}
-
-char *findObjectInCache(Node *node, char *objectName)
-{
-    int i;
-    for (i = 0; i < node->cache->end; i++)
-    {
-        if (strcmp(node->cache->items[i].name, objectName) == 0)
-        {
-            return node->cache->items[i].name;
-        }
-    }
-    return NULL;
-}
-
 void retrieveObject(Node *node, char *objectName)
 {
 
@@ -71,8 +36,8 @@ void retrieveObject(Node *node, char *objectName)
 void handleInterest(Node *node, int fd, char *objectName)
 {
     interestTable *objectEntry;
-    TableInfo *fdEntry, *curr;
-    int VerState = 0;
+    TableInfo *fdEntry;
+
     char *object;
 
     object = findObjectInLIst(node, objectName);
@@ -91,28 +56,15 @@ void handleInterest(Node *node, int fd, char *objectName)
     objectEntry = findObjectInTable(node, objectName); // se não tiver mas houver entrada passar fd para o esatdo de resposta
     if (objectEntry != NULL)
     {
-        fdEntry = findFdEntryInEntries(objectEntry->entries, fd);
+        fdEntry = findFdEntryInEntries(objectEntry->entries, fd, 1);
         if (fdEntry != NULL)
         { // if fd in entry list in state 1 (await) put state as 0 reponse else create the entry
             fdEntry->state = 0;
+            sendAbsenceIfNoInterest(objectEntry);
         }
         else
         {
             createEntryToObjectList(fd, 0, objectEntry);
-            curr = objectEntry->entries;
-            while (curr)
-            {
-                if (curr->state == 1)
-                {
-                    VerState = 1;
-                    // verify that if there is a entry in state 1
-                }
-                curr = curr->next;
-            }
-            if (VerState == 0)
-            {
-                sendAbsenceObjectMessage(fd, objectName);
-            }
         }
 
         return;
@@ -130,7 +82,7 @@ void handleInterest(Node *node, int fd, char *objectName)
         printf("enviar mesnagem de intereste\n");
         objectEntry = createEntryToInterestTable(node, objectName);
         createEntryToObjectList(fd, 0, objectEntry);
-        sendInterestMessageToallInterface(node, objectName, objectEntry, fd);
+        sendInterestMessageToallInterface(node, objectName, objectEntry, fd); // não enviar para o fd que enviou a mensagem
     }
 }
 
@@ -168,30 +120,43 @@ void handleAbsenceMessage(Node *node, int fd, char *objectName)
 {
     interestTable *objectEntry;
     TableInfo *fdEntry;
-    // mudar o estado para fechado talvez
+
     objectEntry = findObjectInTable(node, objectName);
     if (objectEntry != NULL)
     {
-        fdEntry = findFdEntryInEntries(objectEntry->entries, fd);
-        fdEntry->state = 2; // estado fechado
+        fdEntry = findFdEntryInEntries(objectEntry->entries, fd, 1);
+        if (fdEntry)
+        {
+            fdEntry->state = 2; // Estado fechado
+            sendAbsenceIfNoInterest(objectEntry);
+        }
     }
 }
 
-void deleteObject(Node *node, char *objectName)
+void sendAbsenceIfNoInterest(interestTable *objectEntry)
 {
-
-    Names *curr = node->Objects, *prev = NULL;
+    TableInfo *curr = objectEntry->entries;
+    int VerState = 0;
     while (curr)
     {
-        if (strcmp(curr->name, objectName) == 0)
+        if (curr->state == 1)
         {
-            if (prev == NULL)
-                node->Objects = curr->next;
-            else
-                prev->next = curr->next;
-            free(curr);
+            VerState = 1;
+            // verify that if there is a entry in state 1 (wait)
         }
-        prev = curr;
         curr = curr->next;
+    }
+    if (VerState == 0)
+    {
+        curr = objectEntry->entries;
+        while (curr)
+        {
+            if (curr->state == 0)
+            {
+                curr->state = 2; // perguntar se é para apagar da tabela
+                sendAbsenceObjectMessage(curr->fd, objectEntry->objectName);
+            }
+            curr = curr->next;
+        }
     }
 }
