@@ -20,13 +20,6 @@ int isInternal(Node *node, char *ip, int port)
     return 0; // Not found
 }
 
-// Prints an error message and exits
-void errorExit(const char *msg)
-{
-    perror(msg);
-    exit(EXIT_FAILURE);
-}
-
 void executeCommand(char *command, Node *node)
 {
     char cmd[16], arg1[16];
@@ -126,10 +119,11 @@ void MakeNetList(char *buffer, Node *node)
 {
     char ipToJoin[20];
     int portToJoin;
-    char *line = strtok(buffer, "\n"); // Divide o buffer por linhas
+    char *saveptr;
+    char *line = strtok_r(buffer, "\n", &saveptr);
     if (line && strncmp(line, "NODESLIST", 9) == 0)
     {
-        line = strtok(NULL, "\n"); // Pula a primeira linha (NODESLIST net)
+        line = strtok_r(NULL, "\n", &saveptr);
     }
 
     while (line)
@@ -140,48 +134,55 @@ void MakeNetList(char *buffer, Node *node)
             AddNodeFromNetList(node, ipToJoin, portToJoin);
             printf("%s:%d adicionado\n", node->netlist->data.ip, node->netlist->data.port);
         }
-        line = strtok(NULL, "\n"); // Próxima linha
+        line = strtok_r(NULL, "\n", &saveptr);
     }
 }
 
 void excuteCommandFromBuffer(char *buffer, Node *node, int fd)
 {
-    char objectName[101];
-    char ip[20];
-    int port;
-    char cmd[20];
-    char *line = strtok(buffer, "\n"); // Divide o buffer por linhas
+    if (buffer == NULL)
+    {
+        fprintf(stderr, "Error: buffer is NULL\n");
+        return;
+    }
+
+    char objectName[101] = {0};
+    char ip[20] = {0};
+    char cmd[20] = {0};
+    int port = 0;
+
+    char *saveptr;
+    char *line = strtok_r(buffer, "\n", &saveptr);
 
     while (line)
     {
-        printf("line\n");
-        if (sscanf(line, "%s %s %d\n", cmd, ip, &port) == 3)
+        printf("line: %s\n", line);
+        if (sscanf(line, "%s %s %d", cmd, ip, &port) == 3)
         {
             if (strcmp(cmd, "ENTRY") == 0)
                 handleEntry(node, fd, ip, port);
             if (strcmp(cmd, "SAFE") == 0)
                 handleSafe(node, ip, port);
-            line = strtok(NULL, "\n"); // Próxima linha
+
+            line = strtok_r(NULL, "\n", &saveptr);
             continue;
         }
 
-        if (sscanf(line, "%s %s\n", cmd, objectName) == 2)
+        if (sscanf(line, "%s %s", cmd, objectName) == 2)
         {
             if (strcmp(cmd, "OBJECT") == 0)
                 handleObjectMessage(node, objectName);
-
             if (strcmp(cmd, "INTEREST") == 0)
                 handleInterest(node, fd, objectName);
-
             if (strcmp(cmd, "NOOBJECT") == 0)
                 handleAbsenceMessage(node, fd, objectName);
 
-            line = strtok(NULL, "\n"); // Próxima linha
+            line = strtok_r(NULL, "\n", &saveptr);
             continue;
         }
-        line = strtok(NULL, "\n"); // Próxima linha
+
+        line = strtok_r(NULL, "\n", &saveptr);
     }
-    return;
 }
 
 void leaveNet(Node *node)

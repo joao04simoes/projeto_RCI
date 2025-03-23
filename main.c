@@ -8,18 +8,27 @@ int main(int argc, char *argv[])
     Node node;
     char defaultIP[16] = "193.136.138.142";
     char defaultPort[6] = "59000";
+    struct addrinfo hints, *res;
+    int errcode;
+    struct sockaddr addr;
+    socklen_t addrlen = sizeof(addr);
+    char command[128];
+    NodeList *curr;
+    int fd, newfd = -1, counter, maxfd;
+    fd_set rfds;
+    char buffer[128];
 
     if (argc > 4)
     {
-        printf("mais de 4 argc\n");
+
         if (argv[4] != NULL)
         {
-            printf("arg 4\n");
+
             strncpy(defaultIP, argv[4], sizeof(defaultIP) - 1);
         }
         if (argv[5] != NULL)
         {
-            printf("arg 5\n");
+
             strncpy(defaultPort, argv[5], sizeof(defaultPort) - 1);
         }
     }
@@ -30,27 +39,15 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Uso correto: %s cache IP TCP regIP regUDP\n", argv[0]);
         exit(1);
     }
-    printf("copy to node\n");
+
     strncpy(node.regIP, defaultIP, sizeof(defaultIP) - 1);
     strncpy(node.regUDP, defaultPort, sizeof(defaultPort) - 1);
 
     int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
-
     char portStr[6];
     sprintf(portStr, "%d", tcpPort);
-
-    struct addrinfo hints, *res;
-    int errcode;
-    struct sockaddr addr;
-    socklen_t addrlen = sizeof(addr);
-    char command[128];
-    NodeList *curr;
-
-    int fd, newfd = -1, counter, maxfd;
-    fd_set rfds;
-    char buffer[128];
 
     strcpy(node.ip, tcpIP);
     node.FD = -1;
@@ -68,12 +65,14 @@ int main(int argc, char *argv[])
     node.vzsalv.ip[0] = '\0';
     node.Table = NULL;
     node.Objects = NULL;
-    printf("init cache\n");
     initCache(&node, cache);
-    printf("fez init\n");
 
-    if ((fd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        exit(1);
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
+    {
+        printf("erro a criar socket \n");
+        ExitNdn(&node);
+    }
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
@@ -82,20 +81,27 @@ int main(int argc, char *argv[])
 
     if ((errcode = getaddrinfo(NULL, portStr, &hints, &res)) != 0)
     {
-        exit(1);
+        printf("erro no getaddrinfo server \n");
+        ExitNdn(&node);
     }
 
     if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
-        exit(1);
+    {
+        printf("erro a dar bind \n");
+        ExitNdn(&node);
+    }
     if (listen(fd, 5) == -1)
-        exit(1);
+    {
+        printf("erro a dar listen \n");
+        ExitNdn(&node);
+    }
 
     maxfd = fd;
     node.FD = fd;
     freeaddrinfo(res);
     while (1)
     {
-        printf("while 1\n");
+
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
         FD_SET(fd, &rfds);
@@ -140,7 +146,6 @@ int main(int argc, char *argv[])
                     if (newfd > maxfd)
                         maxfd = newfd;
                     excuteCommandFromBuffer(buffer, &node, newfd);
-                    // handleEntry(&node, newfd, ip, port);
                 }
             }
             if (FD_ISSET(node.vzext.FD, &rfds))
@@ -149,35 +154,27 @@ int main(int argc, char *argv[])
                 buffer[0] = 0;
                 int er = read(node.vzext.FD, buffer, sizeof(buffer));
                 if (er == 0)
-                {
-                    printf("o nó externo foi desligado\n");
                     verifyExternal(&node);
-                }
+
                 if (er == -1)
                 {
                     printf("erro reading external\n");
                     ExitNdn(&node);
                 }
-                else
-                {
-                    printf("executar comando\n");
+                if (er > 0)
                     excuteCommandFromBuffer(buffer, &node, node.vzext.FD);
-                }
             }
 
             curr = node.intr;
             while (curr)
             {
+
                 if (FD_ISSET(curr->data.FD, &rfds) && curr->data.FD != node.vzext.FD)
                 {
-                    printf("nos internos\n");
-                    buffer[0] = 0;
+                    memset(buffer, 0, sizeof(buffer));
                     int er = read(curr->data.FD, buffer, sizeof(buffer));
                     if (er == 0)
-                    {
-                        printf("o nó interno foi desligado\n");
                         removeInternalNeighbor(&node, curr->data.FD);
-                    }
 
                     if (er == -1)
                     {
@@ -185,10 +182,7 @@ int main(int argc, char *argv[])
                         ExitNdn(&node);
                     }
                     if (er > 0)
-                    {
-                        printf("executar comando nos internos\n");
                         excuteCommandFromBuffer(buffer, &node, curr->data.FD);
-                    }
                 }
                 curr = curr->next;
             }
