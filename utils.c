@@ -150,12 +150,13 @@ void excuteCommandFromBuffer(char *buffer, Node *node, int fd)
     char ip[20] = {0};
     char cmd[20] = {0};
     int port = 0;
-
+    printf("buferr:%s", buffer);
     char *saveptr;
     char *line = strtok_r(buffer, "\n", &saveptr);
 
     while (line)
     {
+
         printf("line: %s\n", line);
         if (sscanf(line, "%s %s %d", cmd, ip, &port) == 3)
         {

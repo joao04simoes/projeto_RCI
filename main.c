@@ -58,8 +58,6 @@ int main(int argc, char *argv[])
     node.vzsalv.FD = -1;
     node.vzext.port = -1;
     node.vzsalv.port = -1;
-    node.vzext.port = -1;
-    node.vzsalv.port = -1;
     node.netlist = NULL;
     node.vzext.ip[0] = '\0';
     node.vzsalv.ip[0] = '\0';
@@ -101,6 +99,7 @@ int main(int argc, char *argv[])
     freeaddrinfo(res);
     while (1)
     {
+        // printf("while 1\n");
 
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
@@ -126,16 +125,21 @@ int main(int argc, char *argv[])
 
         while (counter--)
         {
+            // printf("while counter\n");
 
             if (FD_ISSET(0, &rfds))
             {
-                fgets(command, sizeof(command), stdin);
+                memset(command, 0, sizeof(command));
+                command[127] = '\0';
+                fgets(command, sizeof(command) - 1, stdin);
                 executeCommand(command, &node);
             }
             if (FD_ISSET(fd, &rfds))
             {
+                memset(buffer, 0, sizeof(buffer));
+                buffer[127] = '\0';
                 newfd = accept(fd, (struct sockaddr *)&addr, &addrlen);
-                recv(newfd, buffer, sizeof(buffer), MSG_DONTWAIT);
+                recv(newfd, buffer, sizeof(buffer) - 1, MSG_DONTWAIT);
                 if (newfd == -1)
                 {
                     printf("erro accepting socket\n");
@@ -151,8 +155,10 @@ int main(int argc, char *argv[])
             if (FD_ISSET(node.vzext.FD, &rfds))
             {
 
-                buffer[0] = 0;
-                int er = read(node.vzext.FD, buffer, sizeof(buffer));
+                // printf("if externo\n");
+                memset(buffer, 0, sizeof(buffer));
+                buffer[127] = '\0';
+                int er = read(node.vzext.FD, buffer, sizeof(buffer) - 1);
                 if (er == 0)
                     verifyExternal(&node);
 
@@ -168,11 +174,13 @@ int main(int argc, char *argv[])
             curr = node.intr;
             while (curr)
             {
+                // printf("loop internsos\n");
 
                 if (FD_ISSET(curr->data.FD, &rfds) && curr->data.FD != node.vzext.FD)
                 {
                     memset(buffer, 0, sizeof(buffer));
-                    int er = read(curr->data.FD, buffer, sizeof(buffer));
+                    buffer[127] = '\0';
+                    int er = read(curr->data.FD, buffer, sizeof(buffer) - 1);
                     if (er == 0)
                         removeInternalNeighbor(&node, curr->data.FD);
 
@@ -186,6 +194,7 @@ int main(int argc, char *argv[])
                 }
                 curr = curr->next;
             }
+            break;
         }
     }
 }

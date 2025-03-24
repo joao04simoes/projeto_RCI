@@ -57,13 +57,13 @@ void addToCache(Node *node, char *data)
 
 void printCache(Node *node)
 {
-
     printf("Objetos na Cache:\n");
     if (node->cache != NULL)
     {
         for (int i = 0; i < node->cache->maxSize; i++)
         {
-            printf("%s\n", node->cache->items[i].name);
+            if (strcmp(node->cache->items[i].name, "") != 0)
+                printf("%s\n", node->cache->items[i].name);
         }
     }
 }

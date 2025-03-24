@@ -24,12 +24,11 @@ void retrieveObject(Node *node, char *objectName)
         return;
     }
 
-    printf("retrieve\n");
     if (node->intr != NULL || node->vzext.FD != -1)
     {
-        printf("dentro do if retrieve\n");
         objectEntry = createEntryToInterestTable(node, objectName);
         sendInterestMessageToallInterface(node, objectName, objectEntry, -1);
+        showInterestTable(node);
     }
 }
 
@@ -61,10 +60,12 @@ void handleInterest(Node *node, int fd, char *objectName)
         { // if fd in entry list in state 1 (await) put state as 0 reponse else create the entry
             fdEntry->state = 0;
             sendAbsenceIfNoInterest(objectEntry);
+            showInterestTable(node);
         }
         else
         {
             createEntryToObjectList(fd, 0, objectEntry);
+            showInterestTable(node);
         }
 
         return;
@@ -75,14 +76,15 @@ void handleInterest(Node *node, int fd, char *objectName)
         if (node->intr == NULL || (node->intr->next == NULL && node->intr->data.FD == fd)) // verificar se é a unica ligação se for enviar mensgaem de ausencia
         {
             sendAbsenceObjectMessage(fd, objectName);
+            showInterestTable(node);
             return;
         }
 
         // else enviar mensagens de objeto e criar entrada na tabela
-        printf("enviar mesnagem de intereste\n");
         objectEntry = createEntryToInterestTable(node, objectName);
         createEntryToObjectList(fd, 0, objectEntry);
-        sendInterestMessageToallInterface(node, objectName, objectEntry, fd); // não enviar para o fd que enviou a mensagem
+        sendInterestMessageToallInterface(node, objectName, objectEntry, fd);
+        showInterestTable(node); // não enviar para o fd que enviou a mensagem
     }
 }
 
@@ -90,26 +92,24 @@ void handleObjectMessage(Node *node, char *objectName)
 {
     interestTable *objectEntry;
     TableInfo *fdEntry;
-    printf("handle object\n");
     objectEntry = findObjectInTable(node, objectName);
-    printf("object entry\n");
     if (objectEntry != NULL)
     {
-        printf("object entry\n");
         fdEntry = objectEntry->entries;
         while (fdEntry)
         {
             if (fdEntry->state == 0)
             {
-                printf("enviar o objeto \n");
+
                 sendObjectMessage(fdEntry->fd, objectName);
+                showInterestTable(node);
             }
             fdEntry = fdEntry->next;
         }
-        printf("adiconar objeto a cache\n");
+
         // apagar entrada na tabela e
         removeEntryFromInterestTable(node, objectName);
-        printf("adiconar objeto a cache\n");
+
         addToCache(node, objectName);
 
         return;
@@ -129,6 +129,7 @@ void handleAbsenceMessage(Node *node, int fd, char *objectName)
         {
             fdEntry->state = 2; // Estado fechado
             sendAbsenceIfNoInterest(objectEntry);
+            showInterestTable(node);
         }
     }
 }
