@@ -53,12 +53,16 @@ void executeCommand(char *command, Node *node)
     }
     else if (strcmp(cmd, "j") == 0 || strcmp(cmd, "join") == 0)
     {
+        if (node->FD == -1)
+            initListenSochet(node);
         strcpy(node->NET, arg1);
         JoinNet(node, arg1);
         return;
     }
     else if (strcmp(cmd, "dj") == 0 || strcmp(cmd, "directjoin") == 0)
     {
+        if (node->FD == -1)
+            initListenSochet(node);
         directJoin(node, arg1, arg2);
         return;
     }
@@ -97,11 +101,6 @@ void executeCommand(char *command, Node *node)
 void ExitNdn(Node *node)
 {
     leaveNet(node);
-
-    if (close(node->FD) == -1)
-    {
-        perror("Erro ao fechar o socket");
-    }
     memCleanup(node);
 
     exit(0);
@@ -198,7 +197,7 @@ void leaveNet(Node *node)
     removeInternalNeighbor(node, node->vzext.FD);
     close(node->vzext.FD);
     addInfoToNode(&node->vzext, "", -1, -1);
-    addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
+    addInfoToNode(&node->vzsalv, "", -1, -1);
     while (curr)
     {
         removeInternalNeighbor(node, curr->data.FD);
@@ -254,6 +253,8 @@ void leaveNet(Node *node)
             printf("Erro na remoção\n");
         }
     }
+    close(node->FD);
+    node->FD = -1;
 }
 
 // Mostra os objetos do nó

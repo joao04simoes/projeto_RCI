@@ -8,13 +8,12 @@ int main(int argc, char *argv[])
     Node node;
     char defaultIP[16] = "193.136.138.142";
     char defaultPort[6] = "59000";
-    struct addrinfo hints, *res;
-    int errcode;
     struct sockaddr addr;
     socklen_t addrlen = sizeof(addr);
+
     char command[128];
     NodeList *curr;
-    int fd, newfd = -1, counter, maxfd;
+    int newfd = -1, counter, maxfd;
     fd_set rfds;
     char buffer[128];
 
@@ -46,8 +45,6 @@ int main(int argc, char *argv[])
     int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
-    char portStr[6];
-    sprintf(portStr, "%d", tcpPort);
 
     strcpy(node.ip, tcpIP);
     node.FD = -1;
@@ -65,48 +62,19 @@ int main(int argc, char *argv[])
     node.Objects = NULL;
     initCache(&node, cache);
 
-    fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd < 0)
-    {
-        printf("erro a criar socket \n");
-        ExitNdn(&node);
-    }
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-
-    if ((errcode = getaddrinfo(NULL, portStr, &hints, &res)) != 0)
-    {
-        printf("erro no getaddrinfo server \n");
-        ExitNdn(&node);
-    }
-
-    if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
-    {
-        printf("erro a dar bind \n");
-        ExitNdn(&node);
-    }
-    if (listen(fd, 5) == -1)
-    {
-        printf("erro a dar listen \n");
-        ExitNdn(&node);
-    }
-
-    maxfd = fd;
-    node.FD = fd;
-    freeaddrinfo(res);
     while (1)
     {
         // printf("while 1\n");
 
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
-        FD_SET(fd, &rfds);
+        FD_SET(node.FD, &rfds);
         FD_SET(node.vzext.FD, &rfds);
         curr = node.intr;
-        maxfd = fd;
+        if (node.FD > 0)
+            maxfd = node.FD;
+        else
+            maxfd = 0;
         while (curr)
         {
             FD_SET(curr->data.FD, &rfds);
@@ -125,8 +93,6 @@ int main(int argc, char *argv[])
 
         while (counter--)
         {
-            // printf("while counter\n");
-
             if (FD_ISSET(0, &rfds))
             {
                 memset(command, 0, sizeof(command));
@@ -134,11 +100,11 @@ int main(int argc, char *argv[])
                 fgets(command, sizeof(command) - 1, stdin);
                 executeCommand(command, &node);
             }
-            if (FD_ISSET(fd, &rfds))
+            if (FD_ISSET(node.FD, &rfds))
             {
                 memset(buffer, 0, sizeof(buffer));
                 buffer[127] = '\0';
-                newfd = accept(fd, (struct sockaddr *)&addr, &addrlen);
+                newfd = accept(node.FD, (struct sockaddr *)&addr, &addrlen);
                 recv(newfd, buffer, sizeof(buffer) - 1, MSG_DONTWAIT);
                 if (newfd == -1)
                 {

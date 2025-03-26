@@ -136,3 +136,53 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
 
     return;
 }
+
+void initListenSochet(Node *node)
+{
+    struct addrinfo hints, *res;
+    int errcode, fd;
+    char portStr[6];
+    sprintf(portStr, "%d", node->port);
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0)
+    {
+        printf("erro a criar socket \n");
+        ExitNdn(node);
+    }
+
+    // Permitir reutilização da porta após fechar o socket
+    int opt = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+    {
+        printf("erro a definir SO_REUSEADDR\n");
+        ExitNdn(node);
+    }
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+
+    printf("porta %s\n", portStr);
+    if ((errcode = getaddrinfo(NULL, portStr, &hints, &res)) != 0)
+    {
+        printf("erro no getaddrinfo server \n");
+        ExitNdn(node);
+    }
+
+    if (bind(fd, res->ai_addr, res->ai_addrlen) == -1)
+    {
+        printf("erro a dar bind \n");
+        ExitNdn(node);
+    }
+
+    if (listen(fd, 5) == -1)
+    {
+        printf("erro a dar listen \n");
+        ExitNdn(node);
+    }
+
+    node->FD = fd;
+    freeaddrinfo(res);
+}

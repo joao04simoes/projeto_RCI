@@ -5,5 +5,6 @@
 
 void JoinNet(Node *node, char *Net);
 void directJoin(Node *node, char *connectIP, int connectTCP);
+void initListenSochet(Node *node);
 
 #endif // NETWORK_H
