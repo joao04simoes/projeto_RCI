@@ -27,31 +27,31 @@ void executeCommand(char *command, Node *node)
     int arg2;
     sscanf(command, "%s %s %d", cmd, arg1, &arg2);
 
-    if (strcmp(cmd, "x") == 0 || strcmp(cmd, "exit") == 0)
+    if (strcmp(cmd, "x") == 0) // exit
     {
         ExitNdn(node);
     }
-    else if (strcmp(cmd, "c") == 0 || strcmp(cmd, "create") == 0)
+    else if (strcmp(cmd, "c") == 0) // create
     {
         addObjectToList(node, arg1);
         return;
     }
-    else if (strcmp(cmd, "sn") == 0 || strcmp(cmd, "shownames") == 0)
+    else if (strcmp(cmd, "sn") == 0) // show names
     {
         showNames(node);
         return;
     }
-    else if (strcmp(cmd, "dl") == 0 || strcmp(cmd, "delete") == 0)
+    else if (strcmp(cmd, "dl") == 0) // delete
     {
         deleteObject(node, arg1);
         return;
     }
-    else if (strcmp(cmd, "r") == 0 || strcmp(cmd, "retrieve") == 0)
+    else if (strcmp(cmd, "r") == 0) // retrieve
     {
         retrieveObject(node, arg1);
         return;
     }
-    else if (strcmp(cmd, "j") == 0 || strcmp(cmd, "join") == 0)
+    else if (strcmp(cmd, "j") == 0) // join
     {
         if (node->FD == -1)
             initListenSochet(node);
@@ -59,40 +59,40 @@ void executeCommand(char *command, Node *node)
         JoinNet(node, arg1);
         return;
     }
-    else if (strcmp(cmd, "dj") == 0 || strcmp(cmd, "directjoin") == 0)
+    else if (strcmp(cmd, "dj") == 0) // direct join
     {
         if (node->FD == -1)
             initListenSochet(node);
         directJoin(node, arg1, arg2);
         return;
     }
-    else if (strcmp(cmd, "si") == 0 || strcmp(cmd, "showinterest") == 0)
+    else if (strcmp(cmd, "si") == 0) // show interest table
     {
         showInterestTable(node);
         return;
     }
-    else if (strcmp(cmd, "l") == 0 || strcmp(cmd, "leave") == 0)
+    else if (strcmp(cmd, "l") == 0) // leave
     {
         leaveNet(node);
         return;
     }
-    else if (strcmp(cmd, "st") == 0 || strcmp(cmd, "showtopology") == 0)
+    else if (strcmp(cmd, "st") == 0) // show topology
     {
         NodeList *curr = node->intr;
-        printf("Node: %s:%d\n", node->ip, node->port);
-        printf("External neighbor: %s:%d\n", node->vzext.ip, node->vzext.port);
-        printf("Internal neighbors:\n");
+        printf("No: %s:%d\n", node->ip, node->port);
+        printf("No externo: %s:%d\n", node->vzext.ip, node->vzext.port);
+        printf("No interno:\n");
         while (curr)
         {
             printf("- %s:%d\n", curr->data.ip, curr->data.port);
             curr = curr->next;
         }
-        printf("Backup neighbor: %s:%d\n", node->vzsalv.ip, node->vzsalv.port);
+        printf("No de salvaguarda: %s:%d\n", node->vzsalv.ip, node->vzsalv.port);
         return;
     }
     else
     {
-        printf("Unknown command: %s\n", cmd);
+        printf("Comando desconhecido: %s\n", cmd);
         return;
     }
 }
@@ -122,9 +122,7 @@ void MakeNetList(char *buffer, Node *node)
     {
         if (sscanf(line, "%s %d\n", ipToJoin, &portToJoin) == 2)
         {
-            printf("Adicionando nó %s:%d à lista\n", ipToJoin, portToJoin);
             AddNodeFromNetList(node, ipToJoin, portToJoin);
-            printf("%s:%d adicionado\n", node->netlist->data.ip, node->netlist->data.port);
         }
         line = strtok_r(NULL, "\n", &saveptr);
     }
@@ -143,14 +141,13 @@ void excuteCommandFromBuffer(char *buffer, Node *node, int fd)
     char ip[20] = {0};
     char cmd[20] = {0};
     int port = 0;
-    printf("buferr:%s", buffer);
     char *saveptr;
     char *line = strtok_r(buffer, "\n", &saveptr);
 
     while (line)
     {
 
-        printf("line: %s\n", line);
+        printf("Comando recebido: %s\n", line);
         if (sscanf(line, "%s %s %d", cmd, ip, &port) == 3)
         {
             if (strcmp(cmd, "ENTRY") == 0)
@@ -192,23 +189,21 @@ void leaveNet(Node *node)
 
     NodeList *curr = node->intr, *next = NULL;
 
-    // remover externo porque pode não ser interno
-
     removeInternalNeighbor(node, node->vzext.FD);
     close(node->vzext.FD);
     addInfoToNode(&node->vzext, "", -1, -1);
     addInfoToNode(&node->vzsalv, "", -1, -1);
-    while (curr)
+    while (curr) // remove os vizinhos internos
     {
         removeInternalNeighbor(node, curr->data.FD);
         close(curr->data.FD);
         curr = curr->next;
     }
-    if (node->NetReg == 1)
+    if (node->NetReg == 1) // desregistar-se da rede
     {
         node->NetReg = -1;
         curr = node->netlist;
-        while (curr)
+        while (curr) // free da lista dos nos da rede
         {
             next = curr->next;
             free(curr);
@@ -270,12 +265,12 @@ void showNames(Node *node)
     printCache(node);
 }
 
-// Escolhe um nó aleatório
+// Escolher um nó aleatório de uma lista de nos
 NodeList *randomNode(NodeList *nodeList)
 {
-    NodeList *curr;
+    NodeList *curr = nodeList;
     int counter = 0;
-
+    printf("random node\n");
     while (curr)
     {
         counter++;
@@ -285,10 +280,12 @@ NodeList *randomNode(NodeList *nodeList)
 
     int random = rand() % counter;
     int i = 0;
-    while (curr)
+    while (counter--)
     {
+        printf("while counter\n");
         if (i == random)
         {
+            printf("logo o primeiro\n");
             return curr;
         }
         curr = curr->next;
@@ -300,7 +297,7 @@ NodeList *randomNode(NodeList *nodeList)
 // Limpa a memória
 void memCleanup(Node *node)
 {
-    // limpar a cache e lisatde objeos
+    // limpar a cache e lista de objetos
     Names *curr = node->Objects, *next = NULL;
     while (curr)
     {
@@ -310,7 +307,7 @@ void memCleanup(Node *node)
     }
     free(node->cache->items);
     free(node->cache);
-    // free tabela de interrese
+    // free da tabela de interrese
     interestTable *currTable = node->Table, *nextTable = NULL;
     TableInfo *currInfo = NULL, *nextInfo = NULL;
     while (currTable)
@@ -327,20 +324,21 @@ void memCleanup(Node *node)
         currTable = nextTable;
     }
 }
-
+// adiciona info sobre um certo nó
 void addInfoToNode(Info *info, char *ip, int port, int fd)
 {
     info->FD = fd;
     info->port = port;
     strcpy(info->ip, ip);
 }
-
+// Envia uma mensagem de SAFE
 void SendSafeMsg(char *ip, int port, int FD)
 {
     char msg[128];
     sprintf(msg, "SAFE %s %d\n", ip, port);
     write(FD, msg, strlen(msg));
 }
+// Envia uma mensagem de ENTRY
 void SendEntryMsg(char *ip, int port, int FD)
 {
     char msg[128];

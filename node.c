@@ -19,12 +19,12 @@ void handleEntry(Node *node, int newfd, char *ip, int port)
 {
     if (isInternal(node, ip, port) == 0)
         addInternalNeighbor(node, newfd, ip, port);
-    if (node->vzext.FD != -1)
+    if (node->vzext.FD != -1) // se tiver externo envia mensagem de safe
     {
         printf("enviar mensagemde safe %s:%d\n", node->vzext.ip, node->vzext.port);
         SendSafeMsg(node->vzext.ip, node->vzext.port, newfd);
     }
-    else
+    else // como não tem externo manda mensagem de entry e safe
     {
         printf("enviar mensagem de entry %s:%d\n", node->ip, node->port);
         addInfoToNode(&node->vzext, ip, port, newfd);
@@ -47,7 +47,7 @@ void verifyExternal(Node *node)
     NodeList *curr = node->intr;
     removeInternalNeighbor(node, node->vzext.FD);
     close(node->vzext.FD);
-    if (strcmp(node->ip, node->vzsalv.ip) == 0 && node->port == node->vzsalv.port)
+    if (strcmp(node->ip, node->vzsalv.ip) == 0 && node->port == node->vzsalv.port) // se o salvaguarda é ele proprio
     {
         // escolher um interno como externo
         curr = node->intr;
@@ -56,7 +56,7 @@ void verifyExternal(Node *node)
             if (curr->data.FD != -1)
             {
                 curr = randomNode(curr);
-                printf("perdeu externo tem interno\n");
+                printf("Perdeu externo mas tem internos\n");
                 addInfoToNode(&node->vzext, curr->data.ip, curr->data.port, curr->data.FD);
                 printf("enviar mensagem de entry %s:%d\n", node->ip, node->port);
                 SendEntryMsg(node->ip, node->port, node->vzext.FD);
@@ -67,12 +67,12 @@ void verifyExternal(Node *node)
             }
         }
         // não tem internos nem salvaguarda
-        printf("perdeu externo não tem interno é salvaguarda de si proprio\n");
+        printf("perdeu externo e não tem salvaguarda nem internos\n");
         addInfoToNode(&node->vzext, "", -1, -1);
         addInfoToNode(&node->vzsalv, "", -1, -1);
         return;
     }
-    else
+    else // fazer ligação ao no de salvaguarda
     {
         addInfoToNode(&node->vzext, node->vzsalv.ip, node->vzsalv.port, node->vzsalv.FD);
         addInfoToNode(&node->vzsalv, "", -1, -1);

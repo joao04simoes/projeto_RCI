@@ -3,7 +3,7 @@
 #include <string.h>
 #include "utilsForObject.h"
 
-// encontra a entrada de um fd numa lista de entradas do objeto
+// encontra a entrada de uma interface fd numa lista de entradas do objeto
 TableInfo *findFdEntryInEntries(TableInfo *objectEntries, int fd, int state)
 {
     if (!objectEntries)
@@ -36,11 +36,11 @@ interestTable *findObjectInTable(Node *node, char *objectName)
     return NULL;
 }
 
-// envia mensagem de interesse para todos os interfaces
+// envia mensagem de interesse para todos os interfaces exceto a interface fd
 void sendInterestMessageToallInterface(Node *node, char *objectName, interestTable *objectEntry, int fd)
 {
     NodeList *curr = node->intr;
-    if ((fd > 0 && node->vzext.FD != fd) || fd == -1)
+    if ((fd > 0 && node->vzext.FD != fd) || fd == -1) // envia para o externo
     {
         sendInterestMessage(node->vzext.FD, objectName);
         createEntryToObjectList(node->vzext.FD, 1, objectEntry);
@@ -48,7 +48,7 @@ void sendInterestMessageToallInterface(Node *node, char *objectName, interestTab
 
     while (curr)
     {
-        if (node->vzext.FD != curr->data.FD && curr->data.FD != fd) // verificar se manda para o externo
+        if (node->vzext.FD != curr->data.FD && curr->data.FD != fd) // não envia para o externos se este for interno
         {
             sendInterestMessage(curr->data.FD, objectName);
             createEntryToObjectList(curr->data.FD, 1, objectEntry);
@@ -83,7 +83,6 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
     // Se não encontrou o objeto, sair da função
     if (currTable == NULL)
     {
-        printf("Erro: Objeto '%s' não encontrado na tabela\n", objectName);
         return;
     }
 
@@ -99,7 +98,6 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
     {
         // O objeto a remover está no início da tabela
         node->Table = currTable->next;
-        printf("first object\n");
     }
     else
     {
@@ -109,17 +107,17 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
     free(currTable);
 }
 
-// cria uma entrada na lista de objetos
+// cria uma entrada de uma interface  na lista de interfaces do objeto
 void createEntryToObjectList(int fd, int state, interestTable *entry)
 {
     TableInfo *newEntry = (TableInfo *)malloc(sizeof(TableInfo));
     newEntry->fd = fd;
     newEntry->state = state;
-    newEntry->next = entry->entries; // Maintain the linked list
+    newEntry->next = entry->entries;
     entry->entries = newEntry;
 }
 
-// cria uma entrada na tabela de interesse
+// cria uma entrada de um objeto na tabela de interesses
 interestTable *createEntryToInterestTable(Node *node, char *objectName)
 {
 
@@ -131,11 +129,12 @@ interestTable *createEntryToInterestTable(Node *node, char *objectName)
     return newEntry;
 }
 
-// mostra a tabela de interesse
+// Print a tabela de interesse
 void showInterestTable(Node *node)
 {
     interestTable *curr = node->Table;
     TableInfo *currEntry;
+    printf("Interest Table:\n");
     while (curr)
     {
         printf("Object: %s\n", curr->objectName);

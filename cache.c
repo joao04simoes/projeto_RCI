@@ -48,7 +48,7 @@ void addToCache(Node *node, char *data)
 
     memset(cache->items[cache->end].name, 0, sizeof(cache->items[cache->end].name));
     strncpy(cache->items[cache->end].name, data, sizeof(cache->items[cache->end].name) - 1);
-    cache->end = (cache->end + 1) % cache->maxSize;
+    cache->end = (cache->end + 1) % cache->maxSize; // Incrementa o índice da cache e volta ao início se chegar ao fim
 }
 // Print da cache
 void printCache(Node *node)

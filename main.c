@@ -61,11 +61,10 @@ int main(int argc, char *argv[])
     node.Table = NULL;
     node.Objects = NULL;
     initCache(&node, cache);
-
+    // while para maquina de estados
     while (1)
     {
-        // printf("while 1\n");
-
+        sleep(3);
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
         FD_SET(node.FD, &rfds);
@@ -91,8 +90,9 @@ int main(int argc, char *argv[])
             ExitNdn(&node);
         }
 
-        while (counter--)
+        if (counter)
         {
+            // verificar o stdin
             if (FD_ISSET(0, &rfds))
             {
                 memset(command, 0, sizeof(command));
@@ -100,6 +100,7 @@ int main(int argc, char *argv[])
                 fgets(command, sizeof(command) - 1, stdin);
                 executeCommand(command, &node);
             }
+            // verificar socket de listen
             if (FD_ISSET(node.FD, &rfds))
             {
                 memset(buffer, 0, sizeof(buffer));
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
                 recv(newfd, buffer, sizeof(buffer) - 1, MSG_DONTWAIT);
                 if (newfd == -1)
                 {
-                    printf("erro accepting socket\n");
+                    printf("erro a aceitar coneção\n");
                     ExitNdn(&node);
                 }
                 else
@@ -118,10 +119,9 @@ int main(int argc, char *argv[])
                     excuteCommandFromBuffer(buffer, &node, newfd);
                 }
             }
+            // verificar socket do externos
             if (FD_ISSET(node.vzext.FD, &rfds))
             {
-
-                // printf("if externo\n");
                 memset(buffer, 0, sizeof(buffer));
                 buffer[127] = '\0';
                 int er = read(node.vzext.FD, buffer, sizeof(buffer) - 1);
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
                 if (er == -1)
                 {
-                    printf("erro reading external\n");
+                    printf("erro a ler externos\n");
                     ExitNdn(&node);
                 }
                 if (er > 0)
@@ -138,10 +138,9 @@ int main(int argc, char *argv[])
             }
 
             curr = node.intr;
+            // loop verificar os externos
             while (curr)
             {
-                // printf("loop internsos\n");
-
                 if (FD_ISSET(curr->data.FD, &rfds) && curr->data.FD != node.vzext.FD)
                 {
                     memset(buffer, 0, sizeof(buffer));
@@ -152,7 +151,7 @@ int main(int argc, char *argv[])
 
                     if (er == -1)
                     {
-                        printf("erro reading internal\n");
+                        printf("erro a ler internos\n");
                         ExitNdn(&node);
                     }
                     if (er > 0)
@@ -160,7 +159,6 @@ int main(int argc, char *argv[])
                 }
                 curr = curr->next;
             }
-            break;
         }
     }
 }

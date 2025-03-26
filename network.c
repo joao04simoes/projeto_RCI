@@ -49,6 +49,7 @@ void JoinNet(Node *node, char *Net)
         ExitNdn(node);
     }
 
+    // faz a lista de nso da rede e escolhe um para se ligar
     MakeNetList(buffer, node);
     curr = node->netlist;
     if (curr != NULL)
@@ -57,6 +58,7 @@ void JoinNet(Node *node, char *Net)
         directJoin(node, curr->data.ip, curr->data.port);
     }
 
+    // regista-se na rede
     sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);
     n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)
@@ -70,6 +72,7 @@ void JoinNet(Node *node, char *Net)
 
     if (n == -1)
     {
+        printf("nó escolhido %s %d\n", curr->data.ip, curr->data.port);
         printf("erro no recvfrom\n");
         ExitNdn(node);
     }
@@ -97,14 +100,13 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
 
     if (strcmp(connectIP, "0.0.0.0") == 0)
     {
-        printf("ip 0.0.0.0 criar a rede\n");
-
+        printf("ip 0.0.0.0 \n Rede criada");
         return;
     }
 
     if (isInternal(node, connectIP, connectTCP) == 1)
     {
-        printf("os nos ja se encontram ligadosn\n");
+        printf("Os nos ja se encontram ligadosn\n");
         return;
     }
 
@@ -137,6 +139,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     return;
 }
 
+// Inicializa o socket de escuta
 void initListenSochet(Node *node)
 {
     struct addrinfo hints, *res;
@@ -151,7 +154,7 @@ void initListenSochet(Node *node)
         ExitNdn(node);
     }
 
-    // Permitir reutilização da porta após fechar o socket
+    // Permite reutilização da porta após fechar o socket
     int opt = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
     {
@@ -164,7 +167,6 @@ void initListenSochet(Node *node)
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_PASSIVE;
 
-    printf("porta %s\n", portStr);
     if ((errcode = getaddrinfo(NULL, portStr, &hints, &res)) != 0)
     {
         printf("erro no getaddrinfo server \n");

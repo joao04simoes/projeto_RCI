@@ -13,19 +13,19 @@ void retrieveObject(Node *node, char *objectName)
     char *object;
 
     object = findObjectInLIst(node, objectName);
-    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    if (object != NULL) // verifica se tem o objeto na lista de objetos
     {
         printf("tem o objeto %s\n", object);
         return;
     }
     object = findObjectInCache(node, objectName);
-    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    if (object != NULL) // verifica se tem o objeto na cache.
     {
         printf("tem o objeto %s\n", object);
         return;
     }
 
-    if (node->intr != NULL || node->vzext.FD != -1)
+    if (node->intr != NULL || node->vzext.FD != -1) // envia mensagem de interrese se tiver interfaces
     {
         objectEntry = createEntryToInterestTable(node, objectName);
         sendInterestMessageToallInterface(node, objectName, objectEntry, -1);
@@ -42,30 +42,30 @@ void handleInterest(Node *node, int fd, char *objectName)
     char *object;
 
     object = findObjectInLIst(node, objectName);
-    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por fd.
     {
         sendObjectMessage(fd, objectName);
         return;
     }
     object = findObjectInCache(node, objectName);
-    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por N.
+    if (object != NULL) // Se o nó tiver o objeto, então envia a correspondente mensagem de objeto por fd.
     {
         sendObjectMessage(fd, objectName);
         return;
     }
 
-    objectEntry = findObjectInTable(node, objectName); // se não tiver mas houver entrada passar fd para o esatdo de resposta
-    if (objectEntry != NULL)
+    objectEntry = findObjectInTable(node, objectName);
+    if (objectEntry != NULL) // se não tiver o objeto mas houver entrada passa o fd para o estado de resposta
     {
         fdEntry = findFdEntryInEntries(objectEntry->entries, fd, 1);
-        if (fdEntry != NULL)
-        { // if fd in entry list in state 1 (await) put state as 0 reponse else create the entry
+        if (fdEntry != NULL) // se houver entrada da interface fd no estado de espera passar para o estado de resposta
+        {
             fdEntry->state = 0;
             sendAbsenceIfNoInterest(objectEntry);
             showInterestTable(node);
             removeEntryFromInterestTable(node, objectName);
         }
-        else
+        else // criar entrada da interface se não houver
         {
             createEntryToObjectList(fd, 0, objectEntry);
             showInterestTable(node);
@@ -74,7 +74,7 @@ void handleInterest(Node *node, int fd, char *objectName)
         return;
     }
 
-    if (objectEntry == NULL)
+    if (objectEntry == NULL) // não há entrada do objeto na tabela de interresses
     {
         if (node->intr == NULL || (node->intr->next == NULL && node->intr->data.FD == fd)) // verificar se é a unica ligação se for enviar mensgaem de ausencia
         {
@@ -84,11 +84,11 @@ void handleInterest(Node *node, int fd, char *objectName)
             return;
         }
 
-        // else enviar mensagens de objeto e criar entrada na tabela
+        // enviar mensagens de interresse e criar entrada na tabela
         objectEntry = createEntryToInterestTable(node, objectName);
         createEntryToObjectList(fd, 0, objectEntry);
         sendInterestMessageToallInterface(node, objectName, objectEntry, fd);
-        showInterestTable(node); // não enviar para o fd que enviou a mensagem
+        showInterestTable(node);
     }
 }
 
@@ -98,21 +98,21 @@ void handleObjectMessage(Node *node, char *objectName)
     interestTable *objectEntry;
     TableInfo *fdEntry;
     objectEntry = findObjectInTable(node, objectName);
-    if (objectEntry != NULL)
+    if (objectEntry != NULL) // se houver entrada na tabela de interesse enviar mensagem de objeto para todos os fd em estado de resposta
     {
         fdEntry = objectEntry->entries;
         while (fdEntry)
         {
-            if (fdEntry->state == 0)
+            if (fdEntry->state == 0) // enviar mensagem de objeto para todos os fd em estado de resposta
             {
                 sendObjectMessage(fdEntry->fd, objectName);
-                showInterestTable(node);
             }
             fdEntry = fdEntry->next;
         }
-        // apagar entrada na tabela e
+        // apagar entrada na tabela
         removeEntryFromInterestTable(node, objectName);
         addToCache(node, objectName);
+        showInterestTable(node);
         return;
     }
 }
@@ -120,47 +120,51 @@ void handleObjectMessage(Node *node, char *objectName)
 // Trata de uma mensagem de ausência de objeto
 void handleAbsenceMessage(Node *node, int fd, char *objectName)
 {
+    int flagWAiting = 0;
     interestTable *objectEntry;
     TableInfo *fdEntry;
     objectEntry = findObjectInTable(node, objectName);
     if (objectEntry != NULL)
     {
+
         fdEntry = findFdEntryInEntries(objectEntry->entries, fd, 1);
-        if (fdEntry)
+        if (fdEntry) // se houver entrada na tabela de interesse com o fd no estado de espera passa para fechado
         {
-            // fdEntry->state = 2; // Estado fechado
-            sendAbsenceIfNoInterest(objectEntry);
+
+            fdEntry->state = 2;
+            flagWAiting = sendAbsenceIfNoInterest(objectEntry); // se não houver mais entradas em estado de espera envia mensagem de ausencia
             showInterestTable(node);
-            removeEntryFromInterestTable(node, objectName);
+            if (flagWAiting == 1) // se não houver mais entradas em estado de espera apaga a entrada
+                removeEntryFromInterestTable(node, objectName);
         }
     }
 }
 
 // Envia mensagem de ausência de objeto se não houver interesse em espera
-void sendAbsenceIfNoInterest(interestTable *objectEntry)
+int sendAbsenceIfNoInterest(interestTable *objectEntry)
 {
     TableInfo *curr = objectEntry->entries;
     int VerState = 0;
-    while (curr)
+    while (curr) // verifica se há entradas em estado de espera
     {
         if (curr->state == 1)
         {
             VerState = 1;
-            // verify that if there is a entry in state 1 (wait)
         }
         curr = curr->next;
     }
-    if (VerState == 0)
+    if (VerState == 0) // se não houver entradas em estado de espera envia mensagem de ausencia
     {
         curr = objectEntry->entries;
         while (curr)
         {
             if (curr->state == 0)
             {
-                curr->state = 2; // perguntar se é para apagar da tabela
                 sendAbsenceObjectMessage(curr->fd, objectEntry->objectName);
             }
             curr = curr->next;
         }
+        return 1;
     }
+    return 0;
 }
