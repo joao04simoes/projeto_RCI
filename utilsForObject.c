@@ -3,12 +3,13 @@
 #include <string.h>
 #include "utilsForObject.h"
 
-TableInfo *findFdEntryInEntries(TableInfo *object, int fd, int state)
+// encontra a entrada de um fd numa lista de entradas do objeto
+TableInfo *findFdEntryInEntries(TableInfo *objectEntries, int fd, int state)
 {
-    if (!object)
-        return NULL; // Evita segmentation fault
+    if (!objectEntries)
+        return NULL;
 
-    TableInfo *curr = object;
+    TableInfo *curr = objectEntries;
     while (curr)
     {
         if (curr->fd == fd && curr->state == state)
@@ -20,6 +21,7 @@ TableInfo *findFdEntryInEntries(TableInfo *object, int fd, int state)
     return NULL;
 }
 
+// encotra um objeto na tabela de interesse
 interestTable *findObjectInTable(Node *node, char *objectName)
 {
     interestTable *curr = node->Table;
@@ -34,6 +36,7 @@ interestTable *findObjectInTable(Node *node, char *objectName)
     return NULL;
 }
 
+// envia mensagem de interesse para todos os interfaces
 void sendInterestMessageToallInterface(Node *node, char *objectName, interestTable *objectEntry, int fd)
 {
     NodeList *curr = node->intr;
@@ -54,6 +57,7 @@ void sendInterestMessageToallInterface(Node *node, char *objectName, interestTab
     }
 }
 
+// remove uma entrada da tabela de interesse
 void removeEntryFromInterestTable(Node *node, char *objectName)
 {
     if (node == NULL || node->Table == NULL)
@@ -83,7 +87,6 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
         return;
     }
 
-    // Liberar todas as entradas associadas ao objeto
     curr = currTable->entries;
     while (curr)
     {
@@ -92,7 +95,6 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
         free(tmp);
     }
 
-    // Remover a entrada da tabela de interesse
     if (prev == NULL)
     {
         // O objeto a remover está no início da tabela
@@ -107,6 +109,7 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
     free(currTable);
 }
 
+// cria uma entrada na lista de objetos
 void createEntryToObjectList(int fd, int state, interestTable *entry)
 {
     TableInfo *newEntry = (TableInfo *)malloc(sizeof(TableInfo));
@@ -115,6 +118,8 @@ void createEntryToObjectList(int fd, int state, interestTable *entry)
     newEntry->next = entry->entries; // Maintain the linked list
     entry->entries = newEntry;
 }
+
+// cria uma entrada na tabela de interesse
 interestTable *createEntryToInterestTable(Node *node, char *objectName)
 {
 
@@ -126,6 +131,7 @@ interestTable *createEntryToInterestTable(Node *node, char *objectName)
     return newEntry;
 }
 
+// mostra a tabela de interesse
 void showInterestTable(Node *node)
 {
     interestTable *curr = node->Table;
@@ -143,6 +149,7 @@ void showInterestTable(Node *node)
     }
 }
 
+// adiciona um objeto à lista de objetos
 void addObjectToList(Node *node, char *objectName)
 {
     Names *newObject = (Names *)malloc(sizeof(Names));
@@ -151,6 +158,7 @@ void addObjectToList(Node *node, char *objectName)
     node->Objects = newObject;
 }
 
+// encontra um objeto na lista de objetos
 char *findObjectInLIst(Node *node, char *objectName)
 {
     Names *curr = node->Objects;
@@ -165,6 +173,7 @@ char *findObjectInLIst(Node *node, char *objectName)
     return NULL;
 }
 
+// encontra um objeto na cache
 char *findObjectInCache(Node *node, char *objectName)
 {
     int i;
@@ -178,6 +187,7 @@ char *findObjectInCache(Node *node, char *objectName)
     return NULL;
 }
 
+// remove um objeto da lista de objetos
 void deleteObject(Node *node, char *objectName)
 {
 
@@ -198,18 +208,23 @@ void deleteObject(Node *node, char *objectName)
     }
 }
 
+// envia mensagem de interesse
 void sendInterestMessage(int fd, char *objectName)
 {
     char buffer[128];
     sprintf(buffer, "INTEREST %s\n", objectName);
     write(fd, buffer, strlen(buffer));
 }
+
+// envia mensagem de objeto
 void sendObjectMessage(int fd, char *objectName)
 {
     char buffer[128];
     sprintf(buffer, "OBJECT %s\n", objectName);
     write(fd, buffer, strlen(buffer));
 }
+
+// envia mensagem de ausência de objeto
 void sendAbsenceObjectMessage(int fd, char *objectName)
 {
     char buffer[128];

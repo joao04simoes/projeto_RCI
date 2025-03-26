@@ -77,15 +77,10 @@ typedef struct
 } Node;
 
 // Function prototypes
-void addInternalNeighbor(Node *node, int fd, char *ip, int port);
-void removeInternalNeighbor(Node *node, int fd);
+
 void updateInternalsSafe(Node *node);
 void handleEntry(Node *node, int newfd, char *ip, int port);
 void handleSafe(Node *node, char *ip, int port);
-void addInfoToNode(Info *info, char *ip, int port, int fd);
 void verifyExternal(Node *node);
-void SendSafeMsg(char *ip, int port, int FD);
-void SendEntryMsg(char *ip, int port, int FD);
-void AddNodeFromNetList(Node *node, char *ip, int port);
 
 #endif // NODE_H

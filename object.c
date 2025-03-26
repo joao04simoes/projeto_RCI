@@ -5,6 +5,7 @@
 #include "utilsForObject.h"
 #include "cache.h"
 
+// Inicia procura por um objeto
 void retrieveObject(Node *node, char *objectName)
 {
 
@@ -32,6 +33,7 @@ void retrieveObject(Node *node, char *objectName)
     }
 }
 
+// Trata de uma mensagem de interesse
 void handleInterest(Node *node, int fd, char *objectName)
 {
     interestTable *objectEntry;
@@ -61,6 +63,7 @@ void handleInterest(Node *node, int fd, char *objectName)
             fdEntry->state = 0;
             sendAbsenceIfNoInterest(objectEntry);
             showInterestTable(node);
+            removeEntryFromInterestTable(node, objectName);
         }
         else
         {
@@ -77,6 +80,7 @@ void handleInterest(Node *node, int fd, char *objectName)
         {
             sendAbsenceObjectMessage(fd, objectName);
             showInterestTable(node);
+            removeEntryFromInterestTable(node, objectName);
             return;
         }
 
@@ -88,6 +92,7 @@ void handleInterest(Node *node, int fd, char *objectName)
     }
 }
 
+// Trata de uma mensagem de objeto
 void handleObjectMessage(Node *node, char *objectName)
 {
     interestTable *objectEntry;
@@ -100,40 +105,38 @@ void handleObjectMessage(Node *node, char *objectName)
         {
             if (fdEntry->state == 0)
             {
-
                 sendObjectMessage(fdEntry->fd, objectName);
                 showInterestTable(node);
             }
             fdEntry = fdEntry->next;
         }
-
         // apagar entrada na tabela e
         removeEntryFromInterestTable(node, objectName);
-
         addToCache(node, objectName);
-
         return;
     }
 }
 
+// Trata de uma mensagem de ausência de objeto
 void handleAbsenceMessage(Node *node, int fd, char *objectName)
 {
     interestTable *objectEntry;
     TableInfo *fdEntry;
-
     objectEntry = findObjectInTable(node, objectName);
     if (objectEntry != NULL)
     {
         fdEntry = findFdEntryInEntries(objectEntry->entries, fd, 1);
         if (fdEntry)
         {
-            fdEntry->state = 2; // Estado fechado
+            // fdEntry->state = 2; // Estado fechado
             sendAbsenceIfNoInterest(objectEntry);
             showInterestTable(node);
+            removeEntryFromInterestTable(node, objectName);
         }
     }
 }
 
+// Envia mensagem de ausência de objeto se não houver interesse em espera
 void sendAbsenceIfNoInterest(interestTable *objectEntry)
 {
     TableInfo *curr = objectEntry->entries;

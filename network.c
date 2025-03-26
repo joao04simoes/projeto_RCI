@@ -48,19 +48,13 @@ void JoinNet(Node *node, char *Net)
         printf("erro no recvfrom\n");
         ExitNdn(node);
     }
-    // write(1, "Echo: ", 6);
-    // write(1, buffer, n);
+
     MakeNetList(buffer, node);
-    // funçao para conetar a um no da lista
     curr = node->netlist;
     if (curr != NULL)
     {
         curr = randomNode(curr);
         directJoin(node, curr->data.ip, curr->data.port);
-    }
-    else
-    {
-        // addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
     }
 
     sprintf(buffer, "REG %s %s %d\n", Net, node->ip, node->port);
@@ -70,9 +64,10 @@ void JoinNet(Node *node, char *Net)
         printf("erro no sendto server\n");
         ExitNdn(node);
     }
+
     buffer[0] = 0;
     n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
-    // printf("recebido do server %s fim \n", buffer);
+
     if (n == -1)
     {
         printf("erro no recvfrom\n");
@@ -103,7 +98,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
     if (strcmp(connectIP, "0.0.0.0") == 0)
     {
         printf("ip 0.0.0.0 criar a rede\n");
-        addInfoToNode(&node->vzsalv, node->ip, node->port, -1);
+
         return;
     }
 
@@ -136,12 +131,7 @@ void directJoin(Node *node, char *connectIP, int connectTCP)
         ExitNdn(node);
     }
     addInfoToNode(&node->vzext, connectIP, connectTCP, JoinFD);
-    /*node->vzext.port = connectTCP;
-    strcpy(node->vzext.ip, connectIP);
-    node->vzext.FD = JoinFD;*/
-
     SendEntryMsg(node->ip, node->port, JoinFD);
-
     freeaddrinfo(res);
 
     return;

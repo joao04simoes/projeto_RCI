@@ -7,7 +7,7 @@
 void initCache(Node *node, int size)
 {
     node->cache = (Cache *)malloc(sizeof(Cache));
-    if (!node->cache) // Verificar se malloc falhou
+    if (!node->cache)
     {
         printf("Erro ao alocar memória para cache!\n");
         exit(1);
@@ -15,46 +15,42 @@ void initCache(Node *node, int size)
 
     Cache *cache = node->cache;
     cache->items = (CacheItem *)malloc(size * sizeof(CacheItem));
-    if (!cache->items) // Verificar se malloc falhou
+    if (!cache->items)
     {
         printf("Erro ao alocar memória para cache items!\n");
-        free(node->cache); // Evita memory leak
+        free(node->cache);
         exit(1);
     }
 
     cache->end = 0;
     cache->maxSize = size;
 
-    // Inicializar os nomes com strings vazias
     for (int i = 0; i < size; i++)
     {
         memset(cache->items[i].name, 0, sizeof(cache->items[i].name));
     }
 }
-
+// Adiciona um objeto à cache
 void addToCache(Node *node, char *data)
 {
-    if (!node->cache || !node->cache->items) // Verificar se cache foi inicializada
+    if (!node->cache || !node->cache->items)
     {
         printf("Erro: Cache não inicializada!\n");
         return;
     }
 
-    printf("antes de iniciar\n");
     Cache *cache = node->cache;
-    if (cache->end >= cache->maxSize) // Garantir que não acessamos fora do array
+    if (cache->end >= cache->maxSize)
     {
         printf("Erro: Índice da cache inválido!\n");
         return;
     }
-    printf("antes do memset\n");
+
     memset(cache->items[cache->end].name, 0, sizeof(cache->items[cache->end].name));
-    printf("antes do copy\n");
     strncpy(cache->items[cache->end].name, data, sizeof(cache->items[cache->end].name) - 1);
-    printf("antes de atualiar o end\n");
     cache->end = (cache->end + 1) % cache->maxSize;
 }
-
+// Print da cache
 void printCache(Node *node)
 {
     printf("Objetos na Cache:\n");
