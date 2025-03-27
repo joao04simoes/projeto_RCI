@@ -6,8 +6,12 @@
 #include "object.h"
 #include "utilsForObject.h"
 #include "cache.h"
+#include <sys/time.h> // Para struct timeval
 
-// Checks if a given IP and port are already in the internal neighbors list
+#define TIMEOUT_SEC 3 // Tempo limite de 3 segundos
+#define MAX_RETRIES 3 // Número máximo de tentativas
+
+// verifica se um no é interno
 int isInternal(Node *node, char *ip, int port)
 {
     NodeList *curr = node->intr;
@@ -179,79 +183,114 @@ void excuteCommandFromBuffer(char *buffer, Node *node, int fd)
 // Sai da rede
 void leaveNet(Node *node)
 {
-
     char buffer[128], trash[128];
-    int n;
+    int n, retries;
     struct addrinfo hints, *res;
     struct sockaddr_in addr;
-    socklen_t addrlen;
+    socklen_t addrlen = sizeof(addr);
     int errcode;
 
     NodeList *curr = node->intr, *next = NULL;
 
+    // Remover vizinhos externos
     removeInternalNeighbor(node, node->vzext.FD);
     close(node->vzext.FD);
     addInfoToNode(&node->vzext, "", -1, -1);
     addInfoToNode(&node->vzsalv, "", -1, -1);
-    while (curr) // remove os vizinhos internos
+
+    // Remover vizinhos internos
+    while (curr)
     {
         removeInternalNeighbor(node, curr->data.FD);
         close(curr->data.FD);
         curr = curr->next;
     }
-    if (node->NetReg == 1) // desregistar-se da rede
+    node->intr = NULL;
+    if (node->NetReg == 1) // Se estiver registrado na rede
     {
         node->NetReg = -1;
+
+        // Free lista de nós da rede
         curr = node->netlist;
-        while (curr) // free da lista dos nos da rede
+        while (curr)
         {
             next = curr->next;
             free(curr);
             curr = next;
         }
+        node->netlist = NULL;
+
+        // Criar socket UDP
         int fd = socket(AF_INET, SOCK_DGRAM, 0);
         if (fd == -1)
         {
             perror("socket");
             exit(1);
         }
+
+        // Definir timeout para recvfrom
+        struct timeval timeout;
+        timeout.tv_sec = TIMEOUT_SEC;
+        timeout.tv_usec = 0;
+        setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+
         memset(&hints, 0, sizeof hints);
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_DGRAM;
+
         errcode = getaddrinfo(node->regIP, node->regUDP, &hints, &res);
         if (errcode != 0)
         {
-            printf("erro no getaddrinfo server \n");
+            printf("Erro no getaddrinfo server\n");
             exit(1);
-        }
-        sprintf(buffer, "UNREG %s %s %d\n", node->NET, node->ip, node->port);
-        n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
-        if (n == -1)
-        {
-            printf("erro no sendto server\n");
-            exit(1);
-        }
-        buffer[0] = 0;
-        n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
-        if (n == -1)
-        {
-            printf("erro no recvfrom\n");
         }
 
-        printf("recebido do server %s fim \n", buffer);
-        if (sscanf(buffer, "OKUNREG%s", trash) == 1)
+        // Enviar pedido de desregistro
+        sprintf(buffer, "UNREG %s %s %d\n", node->NET, node->ip, node->port);
+
+        retries = 0;
+        while (retries < MAX_RETRIES)
         {
-            printf("Remoção do registo feita com sucesso\n");
+            n = sendto(fd, buffer, 128, 0, res->ai_addr, res->ai_addrlen);
+            if (n == -1)
+            {
+                printf("Erro no sendto server\n");
+                exit(1);
+            }
+
+            n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+            if (n != -1)
+            {
+                break; // Resposta recebida, sair do loop
+            }
+            printf("Timeout no UNREG, tentando novamente... (%d/%d)\n", retries + 1, MAX_RETRIES);
+            retries++;
+        }
+
+        if (retries == MAX_RETRIES)
+        {
+            printf("Erro: Falha ao receber resposta do servidor\n");
         }
         else
         {
-            printf("Erro na remoção\n");
+            printf("Recebido do servidor: %s\n", buffer);
+            if (sscanf(buffer, "OKUNREG%s", trash) == 1)
+            {
+                printf("Remoção do registro feita com sucesso\n");
+            }
+            else
+            {
+                printf("Erro na remoção\n");
+            }
         }
+
+        freeaddrinfo(res);
+        close(fd);
     }
+    // Fechar socket de escuta
     close(node->FD);
     node->FD = -1;
 }
-
 // Mostra os objetos do nó
 void showNames(Node *node)
 {
@@ -270,7 +309,7 @@ NodeList *randomNode(NodeList *nodeList)
 {
     NodeList *curr = nodeList;
     int counter = 0;
-    printf("random node\n");
+
     while (curr)
     {
         counter++;
@@ -282,10 +321,8 @@ NodeList *randomNode(NodeList *nodeList)
     int i = 0;
     while (counter--)
     {
-        printf("while counter\n");
         if (i == random)
         {
-            printf("logo o primeiro\n");
             return curr;
         }
         curr = curr->next;

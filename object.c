@@ -15,16 +15,21 @@ void retrieveObject(Node *node, char *objectName)
     object = findObjectInLIst(node, objectName);
     if (object != NULL) // verifica se tem o objeto na lista de objetos
     {
-        printf("tem o objeto %s\n", object);
+        printf("tem o objeto %s\n na lisatde objetos ", object);
         return;
     }
     object = findObjectInCache(node, objectName);
     if (object != NULL) // verifica se tem o objeto na cache.
     {
-        printf("tem o objeto %s\n", object);
+        printf("tem o objeto %s\n na cache", object);
         return;
     }
-
+    objectEntry = findObjectInTable(node, objectName);
+    if (objectEntry != NULL) // verifica se tem o objeto tem entrada na tabela de interesse
+    {
+        return;
+    }
+    objectEntry = NULL;
     if (node->intr != NULL || node->vzext.FD != -1) // envia mensagem de interrese se tiver interfaces
     {
         objectEntry = createEntryToInterestTable(node, objectName);

@@ -62,7 +62,6 @@ void removeEntryFromInterestTable(Node *node, char *objectName)
 {
     if (node == NULL || node->Table == NULL)
     {
-        printf("Erro: Tabela vazia ou nó inválido\n");
         return;
     }
 

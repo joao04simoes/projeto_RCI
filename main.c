@@ -19,15 +19,12 @@ int main(int argc, char *argv[])
 
     if (argc > 4)
     {
-
         if (argv[4] != NULL)
         {
-
             strncpy(defaultIP, argv[4], sizeof(defaultIP) - 1);
         }
         if (argv[5] != NULL)
         {
-
             strncpy(defaultPort, argv[5], sizeof(defaultPort) - 1);
         }
     }
@@ -64,7 +61,7 @@ int main(int argc, char *argv[])
     // while para maquina de estados
     while (1)
     {
-        sleep(3);
+
         FD_ZERO(&rfds);
         FD_SET(0, &rfds);
         FD_SET(node.FD, &rfds);

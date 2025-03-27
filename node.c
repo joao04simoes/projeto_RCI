@@ -74,6 +74,7 @@ void verifyExternal(Node *node)
     }
     else // fazer ligação ao no de salvaguarda
     {
+        printf("Perdeu externo e tem salvaguarda\n");
         addInfoToNode(&node->vzext, node->vzsalv.ip, node->vzsalv.port, node->vzsalv.FD);
         addInfoToNode(&node->vzsalv, "", -1, -1);
         directJoin(node, node->vzext.ip, node->vzext.port);
