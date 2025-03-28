@@ -302,7 +302,7 @@ void leaveNet(Node *node)
         }
         else
         {
-            printf("Recebido do servidor: %s\n", buffer);
+
             if (sscanf(buffer, "OKUNREG%s", trash) == 1)
             {
                 printf("Remoção do registro feita com sucesso\n");

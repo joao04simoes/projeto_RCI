@@ -211,7 +211,7 @@ void sendInterestMessage(int fd, char *objectName)
 {
     char buffer[128];
     sprintf(buffer, "INTEREST %s\n", objectName);
-    printf("enviar mensagem: %s\n", buffer);
+    printf("enviar mensagem: %s", buffer);
     write(fd, buffer, strlen(buffer));
 }
 
@@ -220,7 +220,7 @@ void sendObjectMessage(int fd, char *objectName)
 {
     char buffer[128];
     sprintf(buffer, "OBJECT %s\n", objectName);
-    printf("enviar mensagem: %s\n", buffer);
+    printf("enviar mensagem: %s", buffer);
     write(fd, buffer, strlen(buffer));
 }
 
@@ -229,6 +229,6 @@ void sendAbsenceObjectMessage(int fd, char *objectName)
 {
     char buffer[128];
     sprintf(buffer, "NOOBJECT %s\n", objectName);
-    printf("enviar mensagem: %s\n", buffer);
+    printf("enviar mensagem: %s", buffer);
     write(fd, buffer, strlen(buffer));
 }
