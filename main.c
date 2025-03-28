@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
     int newfd = -1, counter, maxfd;
     fd_set rfds;
     char buffer[128];
-
+    // verificação do ip do servidor UDP e da porta
     if (argc > 4 && argv[4] != NULL)
     {
         if (!isValidIP(argv[4]))
@@ -25,7 +25,6 @@ int main(int argc, char *argv[])
         }
         strncpy(defaultIP, argv[4], sizeof(defaultIP) - 1);
     }
-
     if (argc > 5 && argv[5] != NULL)
     {
         if (!isValidPort(argv[5]))
@@ -45,6 +44,8 @@ int main(int argc, char *argv[])
 
     strncpy(node.regIP, defaultIP, sizeof(defaultIP) - 1);
     strncpy(node.regUDP, defaultPort, sizeof(defaultPort) - 1);
+    // verificação dos argumentos
+
     if (!isValidPort(argv[1]))
     {
         fprintf(stderr, "Erro: O valor de cache deve ser um número válido.\n");
@@ -65,7 +66,7 @@ int main(int argc, char *argv[])
     int cache = atoi(argv[1]);
     char *tcpIP = argv[2];
     int tcpPort = atoi(argv[3]);
-
+    // Inicialização do nó
     strcpy(node.ip, tcpIP);
     node.FD = -1;
     node.NetReg = -1;

@@ -69,6 +69,7 @@ void handleInterest(Node *node, int fd, char *objectName)
             sendAbsenceIfNoInterest(objectEntry);
             showInterestTable(node);
             removeEntryFromInterestTable(node, objectName);
+            showInterestTable(node);
         }
         else // criar entrada da interface se não houver
         {
@@ -87,6 +88,7 @@ void handleInterest(Node *node, int fd, char *objectName)
             sendAbsenceObjectMessage(fd, objectName);
             showInterestTable(node);
             removeEntryFromInterestTable(node, objectName);
+            showInterestTable(node);
             return;
         }
 
@@ -140,8 +142,11 @@ void handleAbsenceMessage(Node *node, int fd, char *objectName)
             fdEntry->state = 2;
             flagWAiting = sendAbsenceIfNoInterest(objectEntry); // se não houver mais entradas em estado de espera envia mensagem de ausencia
             showInterestTable(node);
-            if (flagWAiting == 1) // se não houver mais entradas em estado de espera apaga a entrada
+            if (flagWAiting == 1)
+            { // se não houver mais entradas em estado de espera apaga a entrada
                 removeEntryFromInterestTable(node, objectName);
+                showInterestTable(node);
+            }
         }
     }
 }
