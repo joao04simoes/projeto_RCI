@@ -10,23 +10,30 @@ int main(int argc, char *argv[])
     char defaultPort[6] = "59000";
     struct sockaddr addr;
     socklen_t addrlen = sizeof(addr);
-
     char command[128];
     NodeList *curr;
     int newfd = -1, counter, maxfd;
     fd_set rfds;
     char buffer[128];
 
-    if (argc > 4)
+    if (argc > 4 && argv[4] != NULL)
     {
-        if (argv[4] != NULL)
+        if (!isValidIP(argv[4]))
         {
-            strncpy(defaultIP, argv[4], sizeof(defaultIP) - 1);
+            fprintf(stderr, "Erro: IP servidor UDP inválido.\n");
+            exit(1);
         }
-        if (argv[5] != NULL)
+        strncpy(defaultIP, argv[4], sizeof(defaultIP) - 1);
+    }
+
+    if (argc > 5 && argv[5] != NULL)
+    {
+        if (!isValidPort(argv[5]))
         {
-            strncpy(defaultPort, argv[5], sizeof(defaultPort) - 1);
+            fprintf(stderr, "Erro: Porta servidor UDP inválida.\n");
+            exit(1);
         }
+        strncpy(defaultPort, argv[5], sizeof(defaultPort) - 1);
     }
 
     // Se houver argumentos a mais, erro
@@ -38,6 +45,22 @@ int main(int argc, char *argv[])
 
     strncpy(node.regIP, defaultIP, sizeof(defaultIP) - 1);
     strncpy(node.regUDP, defaultPort, sizeof(defaultPort) - 1);
+    if (!isValidPort(argv[1]))
+    {
+        fprintf(stderr, "Erro: O valor de cache deve ser um número válido.\n");
+        exit(1);
+    }
+    if (!isValidIP(argv[2]))
+    {
+        fprintf(stderr, "Erro: IP do programa inválido.\n");
+        exit(1);
+    }
+
+    if (!isValidPort(argv[3]))
+    {
+        fprintf(stderr, "Erro: Porta do programa inválida.\n");
+        exit(1);
+    }
 
     int cache = atoi(argv[1]);
     char *tcpIP = argv[2];

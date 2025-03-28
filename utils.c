@@ -7,9 +7,37 @@
 #include "utilsForObject.h"
 #include "cache.h"
 #include <sys/time.h> // Para struct timeval
+#include <arpa/inet.h>
+#include <ctype.h>
 
 #define TIMEOUT_SEC 3 // Tempo limite de 3 segundos
 #define MAX_RETRIES 3 // Número máximo de tentativas
+
+// verifica se o ip é valido
+int isValidIP(const char *ip)
+{
+    struct sockaddr_in addr;
+    return inet_pton(AF_INET, ip, &(addr.sin_addr)) == 1;
+}
+
+// verifica se a porta é valida
+int isValidPort(const char *port)
+{
+    int numPort = atoi(port);
+    if (numPort < 1 || numPort > 65535)
+    {
+        return 0;
+    }
+    // Verifica se a string contém apenas números
+    for (int i = 0; port[i] != '\0'; i++)
+    {
+        if (!isdigit(port[i]))
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
 
 // verifica se um no é interno
 int isInternal(Node *node, char *ip, int port)

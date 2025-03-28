@@ -3,9 +3,9 @@
 
 #include "node.h"
 
-// Checks if a node is already connected to a given IP and port
+int isValidIP(const char *ip);
+int isValidPort(const char *port);
 int isInternal(Node *node, char *ip, int port);
-
 void executeCommand(char *command, Node *node);
 void ExitNdn(Node *node);
 void MakeNetList(char *buffer, Node *node);
