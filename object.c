@@ -15,13 +15,13 @@ void retrieveObject(Node *node, char *objectName)
     object = findObjectInLIst(node, objectName);
     if (object != NULL) // verifica se tem o objeto na lista de objetos
     {
-        printf("tem o objeto %s\n na lisatde objetos ", object);
+        printf("tem o objeto %s na lista de objetos\n", object);
         return;
     }
     object = findObjectInCache(node, objectName);
     if (object != NULL) // verifica se tem o objeto na cache.
     {
-        printf("tem o objeto %s\n na cache", object);
+        printf("tem o objeto %s na cache\n", object);
         return;
     }
     objectEntry = findObjectInTable(node, objectName);
@@ -81,8 +81,9 @@ void handleInterest(Node *node, int fd, char *objectName)
 
     if (objectEntry == NULL) // não há entrada do objeto na tabela de interresses
     {
-        if (node->intr == NULL || (node->intr->next == NULL && node->intr->data.FD == fd)) // verificar se é a unica ligação se for enviar mensgaem de ausencia
+        if (node->intr == NULL || (node->intr->next == NULL && node->intr->data.FD == node->vzext.FD)) // verificar se é a unica ligação se for enviar mensgaem de ausencia
         {
+
             sendAbsenceObjectMessage(fd, objectName);
             showInterestTable(node);
             removeEntryFromInterestTable(node, objectName);

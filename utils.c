@@ -104,6 +104,7 @@ void executeCommand(char *command, Node *node)
 // desligar a aplicação
 void ExitNdn(Node *node)
 {
+    printf("A sair...\n");
     leaveNet(node);
     memCleanup(node);
 
